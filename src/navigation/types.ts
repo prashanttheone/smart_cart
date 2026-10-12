@@ -21,7 +21,7 @@ import { Product } from '../services/query/productQueries';
 
 export type RootStackParamList = {
   DrawerRoot: NavigatorScreenParams<DrawerParamList>;
-  ProductDetails: { product: Product };
+  ProductDetails: { product?: Product; productId?: number };
   Cart: undefined;
   Checkout: undefined;
 };

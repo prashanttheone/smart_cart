@@ -1,0 +1,232 @@
+import React from 'react';
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
+import { Star, Plus } from 'lucide-react-native';
+import { colors } from '../theme/colors';
+import { Text } from './ui/Text';
+import { Product } from '../services/query/productQueries';
+import { useAppDispatch } from '../store';
+import { addToCart } from '../store/slices/cartSlice';
+
+export interface ProductCardProps {
+  product: Product;
+  onPress?: (product: Product) => void;
+  onAddToCart?: (product: Product) => void;
+  currencySymbol?: string;
+  cardWidth?: number;
+  style?: StyleProp<ViewStyle>;
+}
+
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onPress,
+  onAddToCart,
+  currencySymbol = '₹',
+  cardWidth = 168,
+  style,
+}) => {
+  const dispatch = useAppDispatch();
+
+  const discount = product.discountPercentage
+    ? Math.round(product.discountPercentage)
+    : 0;
+
+  const originalPrice = discount > 0
+    ? Math.round((product.price * 100) / (100 - discount))
+    : null;
+
+  const handleAddToCart = () => {
+    if (onAddToCart) {
+      onAddToCart(product);
+    } else {
+      dispatch(
+        addToCart({
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          thumbnail: product.thumbnail,
+          quantity: 1,
+        })
+      );
+    }
+  };
+
+  const formattedSubtitle =
+    product.weight && product.weight > 0
+      ? `${product.weight} kg`
+      : product.brand || product.category;
+
+  const formattedRating = product.rating ? product.rating.toFixed(1) : '4.5';
+  const reviewsCount = product.reviews?.length ? `${product.reviews.length * 400}+` : '1.2k';
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.88}
+      onPress={() => onPress?.(product)}
+      style={[styles.card, { width: cardWidth }, style]}
+      accessibilityRole="button"
+      accessibilityLabel={`Product ${product.title}`}
+    >
+      {/* Product Image Area with Discount Badge */}
+      <View style={styles.imageWrapper}>
+        {discount > 0 && (
+          <View style={styles.discountBadge}>
+            <Text weight="bold" size="xs" style={styles.discountText}>
+              {discount}% OFF
+            </Text>
+          </View>
+        )}
+
+        <Image
+          source={{ uri: product.thumbnail }}
+          style={styles.image}
+          resizeMode="contain"
+        />
+      </View>
+
+      {/* Product Details */}
+      <View style={styles.details}>
+        {/* Title */}
+        <Text weight="semiBold" size="sm" color="textPrimary" numberOfLines={1} style={styles.title}>
+          {product.title}
+        </Text>
+
+        {/* Subtitle / Unit */}
+        <Text variant="caption" color="textMuted" numberOfLines={1} style={styles.subtitle}>
+          {formattedSubtitle}
+        </Text>
+
+        {/* Price & Add to Cart Row */}
+        <View style={styles.priceRow}>
+          <View style={styles.priceContainer}>
+            <Text weight="bold" size="base" color="textPrimary">
+              {currencySymbol}{product.price}
+            </Text>
+            {originalPrice !== null && (
+              <Text variant="caption" color="textMuted" style={styles.originalPrice}>
+                {currencySymbol}{originalPrice}
+              </Text>
+            )}
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleAddToCart}
+            style={styles.addButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Add ${product.title} to cart`}
+          >
+            <Plus size={18} color="#FFFFFF" strokeWidth={2.6} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Rating Row */}
+        <View style={styles.ratingRow}>
+          <Star size={13} color="#F59E0B" fill="#F59E0B" strokeWidth={1} />
+          <Text weight="semiBold" size="xs" color="textPrimary" style={styles.ratingText}>
+            {formattedRating}
+          </Text>
+          <Text variant="caption" color="textMuted" size="xs">
+            ({reviewsCount})
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  imageWrapper: {
+    height: 125,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    padding: 8,
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    zIndex: 2,
+  },
+  discountText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  details: {
+    padding: 10,
+  },
+  title: {
+    marginBottom: 2,
+  },
+  subtitle: {
+    marginBottom: 6,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  originalPrice: {
+    textDecorationLine: 'line-through',
+    fontSize: 11,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#0A66FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0A66FF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 11,
+  },
+});
+
+export default ProductCard;

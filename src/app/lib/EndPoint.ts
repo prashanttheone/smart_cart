@@ -83,6 +83,10 @@ export const ENDPOINTS = {
     SORT: (sortBy: string, order: 'asc' | 'desc' = 'asc') =>
       `/products?sortBy=${encodeURIComponent(sortBy)}&order=${order}`,
 
+    // Deals of the Day (sorted by highest discount percentage)
+    DEALS_OF_THE_DAY: (limit = 10) =>
+      `/products?sortBy=discountPercentage&order=desc&limit=${limit}`,
+
     // 6. GET /products?select=:fields (Select specific fields, e.g. title,price)
     SELECT: (fields: string[] | string) => {
       const selectStr = Array.isArray(fields) ? fields.join(',') : fields;

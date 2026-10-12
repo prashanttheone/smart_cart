@@ -14,6 +14,7 @@ import { DrawerParamList, RootStackParamList } from '../navigation/types';
 import { HomeHeader } from '../components/HomeHeader';
 import { HomeSearchBar } from '../components/HomeSearchBar';
 import { CategoryList } from '../components/CategoryList';
+import { DealsOfTheDay } from '../components/DealsOfTheDay';
 import { Text } from '../components/ui/Text';
 
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
@@ -106,6 +107,13 @@ export function HomeScreen() {
           selectedCategory={selectedCategory}
           onSelectCategory={(slug) =>
             setSelectedCategory((prev) => (prev === slug ? undefined : slug))
+          }
+        />
+
+        {/* Deals of the Day Section */}
+        <DealsOfTheDay
+          onPressProduct={(product) =>
+            navigation.navigate('ProductDetails', { product })
           }
         />
       </ScrollView>

@@ -35,10 +35,7 @@ export function RootStackNavigator() {
       <Stack.Screen
         name="ProductDetails"
         component={ProductDetailsScreen}
-        options={({ route }) => ({
-          title: route.params?.product?.title ?? 'Product Details',
-          headerBackTitle: 'Back',
-        })}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Checkout"
