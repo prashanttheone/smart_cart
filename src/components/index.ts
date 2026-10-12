@@ -3,4 +3,5 @@ export * from './HomeSearchBar';
 export * from './CategoryList';
 export * from './ProductCard';
 export * from './DealsOfTheDay';
+export * from './product_details';
 export * from './ui';
