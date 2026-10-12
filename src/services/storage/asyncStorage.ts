@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   USER_DATA: '@smartcart/user_data',
   CART: '@smartcart/cart_items',
   THEME_MODE: '@smartcart/theme_mode',
+  RECENT_SEARCHES: '@smartcart/recent_searches',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

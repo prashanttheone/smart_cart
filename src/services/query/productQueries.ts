@@ -146,3 +146,44 @@ export function useDealsOfTheDayQuery(limit = 10) {
     gcTime: 1000 * 60 * 30, // 30 minutes
   });
 }
+
+/**
+ * Hook to search products with search query and optional pagination/sorting
+ * API: /products/search?q=:query
+ */
+export function useSearchProductsQuery(
+  query: string,
+  params?: { limit?: number; skip?: number; sortBy?: string; order?: 'asc' | 'desc' }
+) {
+  const cleanQuery = query.trim();
+  const searchParams = new URLSearchParams();
+  searchParams.append('q', cleanQuery);
+  if (params?.limit !== undefined) searchParams.append('limit', String(params.limit));
+  if (params?.skip !== undefined) searchParams.append('skip', String(params.skip));
+  if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
+  if (params?.order) searchParams.append('order', params.order);
+
+  return useQuery({
+    queryKey: ['products', 'search', cleanQuery, params],
+    queryFn: () =>
+      api.get<ProductsResponse>(`/products/search?${searchParams.toString()}`),
+    enabled: cleanQuery.length > 0,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+/**
+ * Hook to fetch live autocomplete suggestions (top 6 results selecting key fields)
+ */
+export function useSearchSuggestionsQuery(query: string) {
+  const cleanQuery = query.trim();
+  return useQuery({
+    queryKey: ['products', 'suggestions', cleanQuery],
+    queryFn: () =>
+      api.get<ProductsResponse>(
+        `/products/search?q=${encodeURIComponent(cleanQuery)}&limit=6&select=id,title,category,thumbnail,price`
+      ),
+    enabled: cleanQuery.length >= 2,
+    staleTime: 1000 * 60 * 3, // 3 minutes
+  });
+}
