@@ -2,12 +2,12 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { DrawerScreenProps } from '@react-navigation/drawer';
-import { Product } from '../services/query/productQueries';
 
 export type BottomTabParamList = {
   Home: undefined;
   Categories: undefined;
-  Cart: undefined;
+  Wishlist: undefined;
+  Orders: undefined;
   Profile: undefined;
 };
 
@@ -17,9 +17,12 @@ export type DrawerParamList = {
   Settings: undefined;
 };
 
+import { Product } from '../services/query/productQueries';
+
 export type RootStackParamList = {
   DrawerRoot: NavigatorScreenParams<DrawerParamList>;
   ProductDetails: { product: Product };
+  Cart: undefined;
   Checkout: undefined;
 };
 

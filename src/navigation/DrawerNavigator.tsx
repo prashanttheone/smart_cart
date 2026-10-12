@@ -6,6 +6,7 @@ import {
   DrawerContentScrollView,
   DrawerItemList,
 } from '@react-navigation/drawer';
+import { ShoppingBag, ClipboardList, Settings, ShoppingCart } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { useAppSelector } from '../store';
 import { DrawerParamList } from './types';
@@ -16,13 +17,13 @@ import SettingsScreen from '../screens/SettingsScreen';
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 const renderShopIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.drawerIcon, { color }]}>🛍️</Text>
+  <ShoppingBag size={20} color={color} strokeWidth={2} />
 );
 const renderOrdersIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.drawerIcon, { color }]}>📦</Text>
+  <ClipboardList size={20} color={color} strokeWidth={2} />
 );
 const renderSettingsIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.drawerIcon, { color }]}>⚙️</Text>
+  <Settings size={20} color={color} strokeWidth={2} />
 );
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -34,7 +35,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       {/* Drawer Header */}
       <View style={styles.drawerHeader}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>🛒</Text>
+          <ShoppingCart size={24} color={colors.primary} strokeWidth={2.2} />
         </View>
         <Text style={styles.headerTitle}>
           Smart<Text style={styles.headerAccent}>Cart</Text>
@@ -128,9 +129,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
-  avatarText: {
-    fontSize: 22,
-  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
@@ -165,9 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: -10,
-  },
-  drawerIcon: {
-    fontSize: 18,
   },
   footer: {
     padding: 20,

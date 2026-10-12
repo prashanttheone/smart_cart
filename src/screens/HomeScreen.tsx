@@ -1,120 +1,63 @@
 import React from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { Menu, Search, ShoppingBag } from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { Product, useProductsQuery } from '../services/query/productQueries';
-import { useAppDispatch } from '../store';
-import { addToCart } from '../store/slices/cartSlice';
 import { DrawerParamList, RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList> &
-  DrawerNavigationProp<DrawerParamList>;
+type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
+  NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavProp>();
-  const dispatch = useAppDispatch();
-  const { data, isLoading, isError, refetch } = useProductsQuery(12);
-
-  const handleAddToCart = (product: Product) => {
-    dispatch(
-      addToCart({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        thumbnail: product.thumbnail,
-      })
-    );
-  };
-
-  const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
-      onPress={() => navigation.navigate('ProductDetails', { product: item })}
-    >
-      <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} resizeMode="cover" />
-      <View style={styles.cardContent}>
-        <Text style={styles.categoryBadge}>{item.category.toUpperCase()}</Text>
-        <Text style={styles.productTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => handleAddToCart(item)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.addButtonText}>+ Add to Cart</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
-      {/* Header bar with drawer toggle */}
+      {/* Header bar */}
       <View style={styles.headerBar}>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => navigation.openDrawer()}
           activeOpacity={0.7}
         >
-          <Text style={styles.iconText}>☰</Text>
+          <Menu size={22} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
+
         <Text style={styles.brandTitle}>
-          Smart<Text style={{ color: colors.secondary }}>Cart</Text>
+          Smart<Text style={styles.brandAccent}>Cart</Text>
         </Text>
+
         <TouchableOpacity
           style={styles.iconButton}
-          onPress={() => navigation.navigate('DrawerRoot', { screen: 'MainTabs', params: { screen: 'Cart' } })}
+          onPress={() => navigation.navigate('Cart')}
           activeOpacity={0.7}
         >
-          <Text style={styles.iconText}>🛒</Text>
+          <ShoppingBag size={22} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
-      {/* Hero Banner */}
-      <View style={styles.banner}>
-        <Text style={styles.bannerSubtitle}>🚀 WELCOME TO SMARTCART</Text>
-        <Text style={styles.bannerTitle}>Explore Today's Top Deals</Text>
-        <Text style={styles.bannerDescription}>
-          Powered by React Navigation, Redux Toolkit, TanStack Query & Axios
-        </Text>
-      </View>
+      {/* Clean content body */}
+      <View style={styles.content}>
+        <View style={styles.searchBar}>
+          <Search size={18} color={colors.textMuted} strokeWidth={2} />
+          <Text style={styles.searchPlaceholder}>Search products, brands, categories...</Text>
+        </View>
 
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading products via TanStack Query...</Text>
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeSubtitle}>READY FOR YOUR DATA</Text>
+          <Text style={styles.welcomeTitle}>Welcome to SmartCart</Text>
+          <Text style={styles.welcomeDescription}>
+            Home screen is clean and ready. Connect your endpoints and custom components here.
+          </Text>
         </View>
-      ) : isError ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Could not load products.</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={data?.products ?? []}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderProduct}
-          numColumns={2}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      </View>
     </View>
   );
 }
@@ -129,8 +72,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingVertical: 12,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -143,114 +85,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconText: {
-    fontSize: 20,
-  },
   brandTitle: {
     fontSize: 22,
     fontWeight: '800',
     color: colors.primary,
     letterSpacing: 0.5,
   },
-  banner: {
-    margin: 16,
+  brandAccent: {
+    color: colors.secondary,
+  },
+  content: {
+    flex: 1,
     padding: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 16,
+  },
+  searchPlaceholder: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  welcomeCard: {
+    padding: 20,
     borderRadius: 16,
     backgroundColor: colors.primary,
   },
-  bannerSubtitle: {
+  welcomeSubtitle: {
     fontSize: 11,
     fontWeight: '700',
     color: '#93c5fd',
     letterSpacing: 1,
-    marginBottom: 4,
-  },
-  bannerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textInverse,
-    marginBottom: 4,
-  },
-  bannerDescription: {
-    fontSize: 12,
-    color: '#dbeafe',
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.danger,
-    marginBottom: 12,
-  },
-  retryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: colors.textInverse,
-    fontWeight: '600',
-  },
-  listContainer: {
-    paddingHorizontal: 10,
-    paddingBottom: 24,
-  },
-  card: {
-    flex: 1,
-    margin: 6,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  thumbnail: {
-    width: '100%',
-    height: 120,
-    backgroundColor: colors.surfaceVariant,
-  },
-  cardContent: {
-    padding: 10,
-  },
-  categoryBadge: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 4,
-  },
-  productTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    minHeight: 34,
     marginBottom: 6,
   },
-  productPrice: {
-    fontSize: 15,
+  welcomeTitle: {
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.secondary,
+    color: colors.textInverse,
     marginBottom: 8,
   },
-  addButton: {
-    backgroundColor: colors.primaryLight,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.primaryDark,
+  welcomeDescription: {
+    fontSize: 13,
+    color: '#dbeafe',
+    lineHeight: 18,
   },
 });
 

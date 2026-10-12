@@ -1,40 +1,114 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  House,
+  LayoutGrid,
+  Heart,
+  ClipboardList,
+  User,
+} from 'lucide-react-native';
 import { colors } from '../theme/colors';
-import { useAppSelector } from '../store';
 import { BottomTabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
-import CartScreen from '../screens/CartScreen';
+import WishlistScreen from '../screens/WishlistScreen';
+import OrdersScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-const renderHomeIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.tabIcon, { color }]}>🏠</Text>
+const renderHomeIcon = ({
+  color,
+  size,
+  focused,
+}: {
+  color: string;
+  size: number;
+  focused: boolean;
+}) => (
+  <House
+    size={size}
+    color={color}
+    strokeWidth={focused ? 2.4 : 1.8}
+  />
 );
-const renderCategoriesIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.tabIcon, { color }]}>🗂️</Text>
+
+const renderCategoriesIcon = ({
+  color,
+  size,
+  focused,
+}: {
+  color: string;
+  size: number;
+  focused: boolean;
+}) => (
+  <LayoutGrid
+    size={size}
+    color={color}
+    strokeWidth={focused ? 2.4 : 1.8}
+  />
 );
-const renderCartIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.tabIcon, { color }]}>🛒</Text>
+
+const renderWishlistIcon = ({
+  color,
+  size,
+  focused,
+}: {
+  color: string;
+  size: number;
+  focused: boolean;
+}) => (
+  <Heart
+    size={size}
+    color={color}
+    fill={focused ? color : 'none'}
+    strokeWidth={focused ? 2.4 : 1.8}
+  />
 );
-const renderProfileIcon = ({ color }: { color: string }) => (
-  <Text style={[styles.tabIcon, { color }]}>👤</Text>
+
+const renderOrdersIcon = ({
+  color,
+  size,
+  focused,
+}: {
+  color: string;
+  size: number;
+  focused: boolean;
+}) => (
+  <ClipboardList
+    size={size}
+    color={color}
+    strokeWidth={focused ? 2.4 : 1.8}
+  />
+);
+
+const renderProfileIcon = ({
+  color,
+  size,
+  focused,
+}: {
+  color: string;
+  size: number;
+  focused: boolean;
+}) => (
+  <User
+    size={size}
+    color={color}
+    strokeWidth={focused ? 2.4 : 1.8}
+  />
 );
 
 export function TabNavigator() {
-  const cartCount = useAppSelector((state) => state.cart.totalCount);
-
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: colors.primaryLight,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
       }}
     >
       <Tab.Screen
@@ -54,13 +128,19 @@ export function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Cart"
-        component={CartScreen}
+        name="Wishlist"
+        component={WishlistScreen}
         options={{
-          tabBarLabel: 'Cart',
-          tabBarBadge: cartCount > 0 ? cartCount : undefined,
-          tabBarBadgeStyle: styles.badge,
-          tabBarIcon: renderCartIcon,
+          tabBarLabel: 'Wishlist',
+          tabBarIcon: renderWishlistIcon,
+        }}
+      />
+      <Tab.Screen
+        name="Orders"
+        component={OrdersScreen}
+        options={{
+          tabBarLabel: 'Orders',
+          tabBarIcon: renderOrdersIcon,
         }}
       />
       <Tab.Screen
@@ -80,22 +160,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 4,
-    height: 60,
+    height: 64,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  tabBarItem: {
+    paddingVertical: 2,
   },
   tabBarLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  tabIcon: {
-    fontSize: 20,
-  },
-  badge: {
-    backgroundColor: colors.secondary,
-    color: colors.textInverse,
-    fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '500',
+    marginTop: 2,
   },
 });
 
