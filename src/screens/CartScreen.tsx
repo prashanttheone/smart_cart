@@ -24,41 +24,73 @@ export function CartScreen() {
   const dispatch = useAppDispatch();
   const { items, totalAmount, totalCount } = useAppSelector((state) => state.cart);
 
+  const handleProductPress = (item: CartItem) => {
+    navigation.navigate('ProductDetails', {
+      productId: item.id,
+      product: {
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        thumbnail: item.thumbnail,
+        description: '',
+        category: '',
+      },
+    });
+  };
+
   const renderCartItem = ({ item }: { item: CartItem }) => (
     <View style={styles.itemRow}>
-      <Image source={{ uri: item.thumbnail }} style={styles.itemImage} />
-      <View style={styles.itemDetails}>
-        <Text style={styles.itemTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-        <View style={styles.qtyContainer}>
-          <TouchableOpacity
-            style={styles.qtyBtn}
-            onPress={() =>
-              dispatch(
-                updateQuantity({ id: item.id, quantity: item.quantity - 1 })
-              )
-            }
-          >
-            <Text style={styles.qtyBtnText}>-</Text>
-          </TouchableOpacity>
-          <Text style={styles.qtyText}>{item.quantity}</Text>
-          <TouchableOpacity
-            style={styles.qtyBtn}
-            onPress={() =>
-              dispatch(
-                updateQuantity({ id: item.id, quantity: item.quantity + 1 })
-              )
-            }
-          >
-            <Text style={styles.qtyBtnText}>+</Text>
-          </TouchableOpacity>
+      {/* Tappable Product Area to open Product Details */}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => handleProductPress(item)}
+        style={styles.itemTouchable}
+        accessibilityRole="button"
+        accessibilityLabel={`View details for ${item.title}`}
+      >
+        <Image
+          source={{ uri: item.thumbnail }}
+          style={styles.itemImage}
+          resizeMode="contain"
+        />
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
         </View>
+      </TouchableOpacity>
+
+      <View style={styles.qtyContainer}>
+        <TouchableOpacity
+          style={styles.qtyBtn}
+          onPress={() =>
+            dispatch(
+              updateQuantity({ id: item.id, quantity: item.quantity - 1 })
+            )
+          }
+          accessibilityLabel="Decrease quantity"
+        >
+          <Text style={styles.qtyBtnText}>-</Text>
+        </TouchableOpacity>
+        <Text style={styles.qtyText}>{item.quantity}</Text>
+        <TouchableOpacity
+          style={styles.qtyBtn}
+          onPress={() =>
+            dispatch(
+              updateQuantity({ id: item.id, quantity: item.quantity + 1 })
+            )
+          }
+          accessibilityLabel="Increase quantity"
+        >
+          <Text style={styles.qtyBtnText}>+</Text>
+        </TouchableOpacity>
       </View>
       <TouchableOpacity
         style={styles.deleteBtn}
         onPress={() => dispatch(removeFromCart(item.id))}
+        accessibilityRole="button"
+        accessibilityLabel={`Remove ${item.title} from cart`}
       >
         <Text style={styles.deleteText}>✕</Text>
       </TouchableOpacity>
@@ -148,6 +180,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  itemTouchable: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
   },
   itemImage: {
     width: 60,
