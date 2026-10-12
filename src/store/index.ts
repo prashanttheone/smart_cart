@@ -3,12 +3,18 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import authReducer from './slices/authSlice';
 import cartReducer from './slices/cartSlice';
 import searchReducer from './slices/searchSlice';
+import addressReducer from './slices/addressSlice';
+import checkoutReducer from './slices/checkoutSlice';
+import orderReducer from './slices/orderSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     cart: cartReducer,
     search: searchReducer,
+    addresses: addressReducer,
+    checkout: checkoutReducer,
+    orders: orderReducer,
   },
 });
 
