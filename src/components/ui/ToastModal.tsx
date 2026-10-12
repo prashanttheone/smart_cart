@@ -1,11 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   StyleProp,
   ViewStyle,
-  Animated,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -92,7 +91,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
   }, [mode, isVisible, autoHideDuration, onClose]);
 
   // Color config according to type
-  const theme = React.useMemo(() => {
+  const theme = useMemo(() => {
     switch (type) {
       case 'success':
         return {
@@ -146,31 +145,31 @@ export const ToastModal: React.FC<ToastModalProps> = ({
   const IconComponent = theme.IconComponent;
   const isConfirmMode = mode === 'modal' && (type === 'confirm' || showCancel);
 
-  // Button background helper
-  const getButtonBg = (variant: ButtonVariant) => {
+  // Button styles helper
+  const getButtonStyle = (variant: ButtonVariant, isCancel = false) => {
     switch (variant) {
       case 'danger':
-        return '#EF4444';
+        return styles.dangerBtn;
       case 'success':
-        return '#10B981';
+        return styles.successBtn;
       case 'secondary':
-        return '#F1F5F9';
+        return styles.secondaryBtn;
       case 'outline':
-        return 'transparent';
+        return isCancel ? styles.cancelOutlineBtn : styles.outlineBtn;
       case 'primary':
       default:
-        return colors.primary;
+        return styles.primaryBtn;
     }
   };
 
-  const getButtonTextColor = (variant: ButtonVariant) => {
+  const getButtonTextStyle = (variant: ButtonVariant) => {
     switch (variant) {
       case 'secondary':
-        return '#475569';
+        return styles.textSecondaryColor;
       case 'outline':
-        return colors.primary;
+        return styles.textPrimaryOutline;
       default:
-        return '#FFFFFF';
+        return styles.textWhite;
     }
   };
 
@@ -187,6 +186,31 @@ export const ToastModal: React.FC<ToastModalProps> = ({
     }
     onClose();
   };
+
+  const toastInsetTop = useMemo(() => ({ paddingTop: insets.top + 10 }), [insets.top]);
+  const toastInsetBottom = useMemo(
+    () => ({ paddingBottom: insets.bottom + 16 }),
+    [insets.bottom]
+  );
+  const toastBorder = useMemo(
+    () => ({ borderColor: theme.borderBadge }),
+    [theme.borderBadge]
+  );
+  const toastAccentBarBg = useMemo(
+    () => ({ backgroundColor: theme.borderColor }),
+    [theme.borderColor]
+  );
+  const toastBadgeBg = useMemo(
+    () => ({ backgroundColor: theme.bgBadge }),
+    [theme.bgBadge]
+  );
+  const modalBadgeStyle = useMemo(
+    () => ({
+      backgroundColor: theme.bgBadge,
+      borderColor: theme.borderBadge,
+    }),
+    [theme.bgBadge, theme.borderBadge]
+  );
 
   // ----------------------------------------------------
   // RENDER TOAST MODE
@@ -209,25 +233,16 @@ export const ToastModal: React.FC<ToastModalProps> = ({
         onBackButtonPress={onClose}
         style={[
           styles.toastModalStyle,
-          isTop
-            ? { justifyContent: 'flex-start', paddingTop: insets.top + 10 }
-            : { justifyContent: 'flex-end', paddingBottom: insets.bottom + 16 },
+          isTop ? styles.toastTop : styles.toastBottom,
+          isTop ? toastInsetTop : toastInsetBottom,
         ]}
       >
-        <View
-          style={[
-            styles.toastContainer,
-            { borderColor: theme.borderBadge },
-            style,
-          ]}
-        >
+        <View style={[styles.toastContainer, toastBorder, style]}>
           {/* Toast Accent Indicator */}
-          <View
-            style={[styles.toastAccentBar, { backgroundColor: theme.borderColor }]}
-          />
+          <View style={[styles.toastAccentBar, toastAccentBarBg]} />
 
           {/* Left Icon Badge */}
-          <View style={[styles.toastIconWrapper, { backgroundColor: theme.bgBadge }]}>
+          <View style={[styles.toastIconWrapper, toastBadgeBg]}>
             <IconComponent size={20} color={theme.iconColor} strokeWidth={2.2} />
           </View>
 
@@ -303,12 +318,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
         )}
 
         {/* Floating Glowing Icon Badge */}
-        <View
-          style={[
-            styles.modalIconBadge,
-            { backgroundColor: theme.bgBadge, borderColor: theme.borderBadge },
-          ]}
-        >
+        <View style={[styles.modalIconBadge, modalBadgeStyle]}>
           <IconComponent size={34} color={theme.iconColor} strokeWidth={2.2} />
         </View>
 
@@ -347,11 +357,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
               style={[
                 styles.actionBtn,
                 styles.cancelBtn,
-                {
-                  backgroundColor: getButtonBg(cancelVariant),
-                  borderColor:
-                    cancelVariant === 'outline' ? colors.borderStrong : colors.border,
-                },
+                getButtonStyle(cancelVariant, true),
               ]}
               accessibilityRole="button"
               accessibilityLabel={cancelText}
@@ -359,7 +365,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
               <Text
                 weight="semiBold"
                 size="md"
-                style={{ color: getButtonTextColor(cancelVariant) }}
+                style={getButtonTextStyle(cancelVariant)}
               >
                 {cancelText}
               </Text>
@@ -372,11 +378,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
             style={[
               styles.actionBtn,
               isConfirmMode ? styles.confirmFlexBtn : styles.singleBtn,
-              {
-                backgroundColor: getButtonBg(confirmVariant),
-                borderColor:
-                  confirmVariant === 'outline' ? colors.primary : 'transparent',
-              },
+              getButtonStyle(confirmVariant, false),
             ]}
             accessibilityRole="button"
             accessibilityLabel={confirmText}
@@ -384,7 +386,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
             <Text
               weight="bold"
               size="md"
-              style={{ color: getButtonTextColor(confirmVariant) }}
+              style={getButtonTextStyle(confirmVariant)}
             >
               {confirmText}
             </Text>
@@ -479,12 +481,55 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
+  // Button Variant Styles
+  primaryBtn: {
+    backgroundColor: colors.primary,
+    borderColor: 'transparent',
+  },
+  dangerBtn: {
+    backgroundColor: '#EF4444',
+    borderColor: 'transparent',
+  },
+  successBtn: {
+    backgroundColor: '#10B981',
+    borderColor: 'transparent',
+  },
+  secondaryBtn: {
+    backgroundColor: '#F1F5F9',
+    borderColor: colors.border,
+  },
+  outlineBtn: {
+    backgroundColor: 'transparent',
+    borderColor: colors.primary,
+  },
+  cancelOutlineBtn: {
+    backgroundColor: 'transparent',
+    borderColor: colors.borderStrong,
+  },
+
+  // Button Text Styles
+  textWhite: {
+    color: '#FFFFFF',
+  },
+  textSecondaryColor: {
+    color: '#475569',
+  },
+  textPrimaryOutline: {
+    color: colors.primary,
+  },
+
   // Toast Styles
   toastModalStyle: {
     margin: 0,
     alignItems: 'center',
     paddingHorizontal: 16,
     pointerEvents: 'box-none',
+  },
+  toastTop: {
+    justifyContent: 'flex-start',
+  },
+  toastBottom: {
+    justifyContent: 'flex-end',
   },
   toastContainer: {
     width: '100%',
