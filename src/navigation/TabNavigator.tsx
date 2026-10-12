@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { colors } from '../theme/colors';
 import { useAppSelector } from '../store';
@@ -10,6 +10,19 @@ import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
+
+const renderHomeIcon = ({ color }: { color: string }) => (
+  <Text style={[styles.tabIcon, { color }]}>🏠</Text>
+);
+const renderCategoriesIcon = ({ color }: { color: string }) => (
+  <Text style={[styles.tabIcon, { color }]}>🗂️</Text>
+);
+const renderCartIcon = ({ color }: { color: string }) => (
+  <Text style={[styles.tabIcon, { color }]}>🛒</Text>
+);
+const renderProfileIcon = ({ color }: { color: string }) => (
+  <Text style={[styles.tabIcon, { color }]}>👤</Text>
+);
 
 export function TabNavigator() {
   const cartCount = useAppSelector((state) => state.cart.totalCount);
@@ -29,7 +42,7 @@ export function TabNavigator() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🏠</Text>,
+          tabBarIcon: renderHomeIcon,
         }}
       />
       <Tab.Screen
@@ -37,7 +50,7 @@ export function TabNavigator() {
         component={CategoriesScreen}
         options={{
           tabBarLabel: 'Categories',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🗂️</Text>,
+          tabBarIcon: renderCategoriesIcon,
         }}
       />
       <Tab.Screen
@@ -47,7 +60,7 @@ export function TabNavigator() {
           tabBarLabel: 'Cart',
           tabBarBadge: cartCount > 0 ? cartCount : undefined,
           tabBarBadgeStyle: styles.badge,
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>🛒</Text>,
+          tabBarIcon: renderCartIcon,
         }}
       />
       <Tab.Screen
@@ -55,7 +68,7 @@ export function TabNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>👤</Text>,
+          tabBarIcon: renderProfileIcon,
         }}
       />
     </Tab.Navigator>

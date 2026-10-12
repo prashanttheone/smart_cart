@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 
 export function SettingsScreen() {
