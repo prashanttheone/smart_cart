@@ -147,8 +147,6 @@ export function ProductDetailsScreen() {
         onPressBack={() => navigation.goBack()}
         onPressCart={() => navigation.navigate('Cart')}
         cartCount={cartTotalCount}
-        isInWishlist={isInWishlist}
-        onToggleWishlist={handleToggleWishlist}
       />
 
       {/* 2. Body: Loading, Error, or Product Sections */}
@@ -187,11 +185,13 @@ export function ProductDetailsScreen() {
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {/* Product Gallery: images, thumbnail, discount */}
+            {/* Product Gallery: images, thumbnail, discount, wishlist button */}
             <ProductGallery
               images={product.images}
               thumbnail={product.thumbnail}
               discountPercentage={product.discountPercentage}
+              isInWishlist={isInWishlist}
+              onToggleWishlist={handleToggleWishlist}
             />
 
             {/* Product Title & Rating: title, brand, category, rating, reviews.length */}

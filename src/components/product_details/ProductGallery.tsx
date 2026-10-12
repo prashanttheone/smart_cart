@@ -6,6 +6,7 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
+import { Heart } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { Text } from '../ui/Text';
 
@@ -13,12 +14,16 @@ export interface ProductGalleryProps {
   images?: string[];
   thumbnail: string;
   discountPercentage?: number;
+  isInWishlist?: boolean;
+  onToggleWishlist?: () => void;
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({
   images,
   thumbnail,
   discountPercentage,
+  isInWishlist = false,
+  onToggleWishlist,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -37,6 +42,27 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             {discount}% OFF
           </Text>
         </View>
+      )}
+
+      {/* Wishlist Toggle Button (Top Right) */}
+      {onToggleWishlist && (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onToggleWishlist}
+          style={styles.wishlistBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'
+          }
+        >
+          <Heart
+            size={20}
+            color={isInWishlist ? '#EF4444' : colors.textSecondary}
+            fill={isInWishlist ? '#EF4444' : 'transparent'}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
       )}
 
       {/* Main Active Image */}
@@ -101,6 +127,25 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     zIndex: 2,
+  },
+  wishlistBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   discountText: {
     color: '#FFFFFF',
