@@ -11,6 +11,8 @@ import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import SearchScreen from '../screens/SearchScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -74,6 +76,20 @@ export const STACK_ROUTES: ReadonlyArray<StackRouteConfig> = [
     options: {
       headerShown: false,
       animation: 'fade',
+    },
+  },
+  {
+    name: 'Login',
+    component: LoginScreen,
+    options: {
+      headerShown: false,
+    },
+  },
+  {
+    name: 'Register',
+    component: RegisterScreen,
+    options: {
+      headerShown: false,
     },
   },
 ] as const;

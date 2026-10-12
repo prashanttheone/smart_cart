@@ -1,9 +1,33 @@
 /**
- * DummyJSON API Endpoints
- * Base URL: https://dummyjson.com
+ * SmartCart API Endpoints
+ * 1. DummyJSON API (Products, Categories, Mock Carts): https://dummyjson.com
+ * 2. Custom Backend Server (Auth & Orders): http://localhost:3005 (or 10.0.2.2:3005 on Android)
  */
 
-export const BASE_URL = 'https://dummyjson.com';
+import { Platform } from 'react-native';
+
+/**
+ * Base URL for DummyJSON public catalog
+ */
+export const DUMMY_JSON_BASE_URL = 'https://dummyjson.com';
+export const BASE_URL = DUMMY_JSON_BASE_URL; // Alias for backward compatibility
+
+/**
+ * Custom Backend Server Base URL (Auth & Orders)
+ * Port: 3005
+ * Android Emulator connects to host machine via 10.0.2.2
+ * iOS Simulator and Web connect via localhost
+ */
+export const SERVER_PORT = 3005;
+export const SERVER_BASE_URL =
+  Platform.OS === 'android'
+    ? `http://10.0.2.2:${SERVER_PORT}`
+    : `http://localhost:${SERVER_PORT}`;
+export const API_BASE_URL = SERVER_BASE_URL;
+
+// ==========================================
+// Types & Query Interfaces
+// ==========================================
 
 export interface ProductQueryParams {
   limit?: number;
@@ -19,6 +43,47 @@ export interface CategoryItem {
   slug: string;
   name: string;
   url: string;
+}
+
+export interface OrderItemPayload {
+  id: number | string;
+  title: string;
+  price: number;
+  thumbnail?: string;
+  quantity?: number;
+}
+
+export interface CreateOrderPayload {
+  user_id?: string;
+  userId?: string;
+  address: string;
+  products: OrderItemPayload[];
+  total_amount?: number;
+}
+
+export interface OrderRecord {
+  _id?: string;
+  order_id: string;
+  user_id: string;
+  address: string;
+  products: OrderItemPayload[];
+  total_amount: number;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  created?: string;
+  updated?: string;
+}
+
+export interface LoginPayload {
+  email?: string;
+  username?: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  username: string;
+  email: string;
+  password: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -58,11 +123,20 @@ export function buildProductQueryString(params?: ProductQueryParams): string {
   return queryStr ? `?${queryStr}` : '';
 }
 
+// ==========================================
+// Centralized API Endpoints Map
+// ==========================================
+
 export const ENDPOINTS = {
+  // Base URLs
   BASE_URL,
+  DUMMY_JSON_BASE_URL,
+  SERVER_BASE_URL,
+  API_BASE_URL,
 
   /**
-   * Product Endpoints
+   * Product Endpoints (DummyJSON)
+   * Base URL: https://dummyjson.com
    */
   PRODUCTS: {
     // 1. GET /products (All products)
@@ -108,7 +182,8 @@ export const ENDPOINTS = {
   },
 
   /**
-   * Category Endpoints
+   * Category Endpoints (DummyJSON)
+   * Base URL: https://dummyjson.com
    */
   CATEGORIES: {
     // 8. GET /products/categories (Categories with names, slugs, and URLs)
@@ -123,7 +198,8 @@ export const ENDPOINTS = {
   },
 
   /**
-   * Cart Endpoints (Ready for Cart mutations and queries)
+   * Cart Endpoints (DummyJSON mock carts)
+   * Base URL: https://dummyjson.com
    */
   CARTS: {
     LIST: '/carts',
@@ -132,6 +208,56 @@ export const ENDPOINTS = {
     ADD: '/carts/add',
     UPDATE: (id: number | string) => `/carts/${id}`,
     DELETE: (id: number | string) => `/carts/${id}`,
+  },
+
+  /**
+   * Auth Endpoints (Custom Backend Server)
+   * Base URL: SERVER_BASE_URL (http://10.0.2.2:3005 or http://localhost:3005)
+   * Base Path: /api/auth
+   */
+  AUTH: {
+    BASE_URL: SERVER_BASE_URL,
+    BASE_PATH: '/api/auth',
+
+    // POST /api/auth/register (User registration)
+    REGISTER: '/api/auth/register',
+
+    // POST /api/auth/login (User login)
+    LOGIN: '/api/auth/login',
+
+    // Full URL builder
+    buildUrl: (path: string) =>
+      `${SERVER_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`,
+  },
+
+  /**
+   * Order Endpoints (Custom Backend Server)
+   * Base URL: SERVER_BASE_URL (http://10.0.2.2:3005 or http://localhost:3005)
+   * Base Path: /api/orders
+   * Protected with middleware: router.use(requireAuth)
+   */
+  ORDERS: {
+    BASE_URL: SERVER_BASE_URL,
+    BASE_PATH: '/api/orders',
+    REQUIRES_AUTH: true,
+
+    // POST /api/orders (createOrder) [Protected with requireAuth]
+    CREATE: '/api/orders',
+
+    // GET /api/orders (getOrders) [Protected with requireAuth]
+    LIST: '/api/orders',
+
+    // GET /api/orders/user/:userId (getOrdersByUserId) [Protected with requireAuth]
+    GET_BY_USER_ID: (userId: number | string) =>
+      `/api/orders/user/${encodeURIComponent(String(userId))}`,
+
+    // GET /api/orders/:id (getOrderById) [Protected with requireAuth]
+    GET_BY_ID: (id: number | string) =>
+      `/api/orders/${encodeURIComponent(String(id))}`,
+
+    // Full URL builder
+    buildUrl: (path: string) =>
+      `${SERVER_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`,
   },
 } as const;
 

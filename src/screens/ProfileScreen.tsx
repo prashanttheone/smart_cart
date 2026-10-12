@@ -9,11 +9,15 @@ import {
 import { colors } from '../theme/colors';
 import { useToastModal } from '../components/ui';
 import { useAppDispatch, useAppSelector } from '../store';
-import { logout, setUser } from '../store/slices/authSlice';
-import { appStorage } from '../services/storage/asyncStorage';
+import { logout } from '../store/slices/authSlice';
+import { appStorage, STORAGE_KEYS } from '../services/storage/asyncStorage';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 
 export function ProfileScreen() {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { showToast, showConfirm } = useToastModal();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [note, setNote] = useState('');
@@ -131,25 +135,34 @@ export function ProfileScreen() {
         {isAuthenticated ? (
           <TouchableOpacity
             style={styles.logoutBtn}
-            onPress={() => dispatch(logout())}
+            onPress={async () => {
+              await appStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+              dispatch(logout());
+              showToast({
+                type: 'info',
+                title: 'Logged Out',
+                message: 'You have been logged out of SmartCart.',
+              });
+            }}
           >
-            <Text style={styles.logoutBtnText}>Log Out (Redux)</Text>
+            <Text style={styles.logoutBtnText}>Log Out</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            style={styles.loginBtn}
-            onPress={() =>
-              dispatch(
-                setUser({
-                  id: 'user_1',
-                  name: 'Smart Shopper',
-                  email: 'shopper@smartcart.app',
-                })
-              )
-            }
-          >
-            <Text style={styles.loginBtnText}>Log In as Demo User</Text>
-          </TouchableOpacity>
+          <View style={styles.authButtonsStack}>
+            <TouchableOpacity
+              style={styles.loginBtn}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={styles.loginBtnText}>Sign In (Email & Password)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.registerBtn}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.registerBtnText}>Create Account (Multi-Step)</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </View>
@@ -298,6 +311,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
+  authButtonsStack: {
+    gap: 10,
+  },
   loginBtn: {
     paddingVertical: 14,
     borderRadius: 12,
@@ -306,6 +322,19 @@ const styles = StyleSheet.create({
   },
   loginBtnText: {
     color: colors.textInverse,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  registerBtn: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: 'center',
+  },
+  registerBtnText: {
+    color: colors.primary,
     fontWeight: '700',
     fontSize: 15,
   },

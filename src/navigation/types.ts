@@ -26,6 +26,8 @@ export type RootStackParamList = {
   Cart: undefined;
   Checkout: undefined;
   Search: { initialQuery?: string } | undefined;
+  Login: undefined;
+  Register: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =

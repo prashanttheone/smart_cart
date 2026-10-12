@@ -6,3 +6,5 @@ export * from './DealsOfTheDay';
 export * from './ProductGrid';
 export * from './product_details';
 export * from './ui';
+export * from './layout';
+export * from './auth';
