@@ -15,6 +15,7 @@ import { Text } from '../components/ui/Text';
 import { RootStackParamList } from '../navigation/types';
 import { useAppDispatch, useAppSelector } from '../store';
 import { addToCart, updateQuantity, removeFromCart } from '../store/slices/cartSlice';
+import { toggleWishlist } from '../store/slices/wishlistSlice';
 import { useProductByIdQuery } from '../services/query/productQueries';
 
 import {
@@ -65,6 +66,27 @@ export function ProductDetailsScreen() {
   } = useProductByIdQuery(targetId, initialProduct);
 
   const product = productData || initialProduct;
+
+  // Wishlist state for this product
+  const isInWishlist = useAppSelector((state) =>
+    product ? state.wishlist.items.some((item) => item.id === product.id) : false
+  );
+
+  const handleToggleWishlist = () => {
+    if (!product) return;
+    dispatch(
+      toggleWishlist({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        thumbnail: product.thumbnail,
+        category: product.category,
+        brand: product.brand,
+        rating: product.rating,
+        discountPercentage: product.discountPercentage,
+      })
+    );
+  };
 
   // Cart quantity for this item
   const currentCartItem = product
@@ -125,6 +147,8 @@ export function ProductDetailsScreen() {
         onPressBack={() => navigation.goBack()}
         onPressCart={() => navigation.navigate('Cart')}
         cartCount={cartTotalCount}
+        isInWishlist={isInWishlist}
+        onToggleWishlist={handleToggleWishlist}
       />
 
       {/* 2. Body: Loading, Error, or Product Sections */}

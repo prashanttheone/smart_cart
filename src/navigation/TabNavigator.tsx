@@ -14,6 +14,7 @@ import {
   User,
 } from 'lucide-react-native';
 
+import { useAppSelector } from '../store';
 import { colors } from '../theme/colors';
 import { fontFamilies } from '../theme/typography';
 import { BottomTabParamList } from './types';
@@ -108,7 +109,8 @@ export const TAB_ROUTES: ReadonlyArray<TabRouteConfig> = [
 
 export function TabNavigator() {
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, 8);
+  const wishlistCount = useAppSelector((state) => state.wishlist.totalCount);
+  const bottomPadding = Math.max(insets.bottom, 12);
   const tabHeight = 56 + bottomPadding;
 
   return (
@@ -136,6 +138,12 @@ export function TabNavigator() {
           options={{
             tabBarLabel: route.label,
             tabBarIcon: route.icon,
+            tabBarBadge:
+              route.name === 'Wishlist' && wishlistCount > 0
+                ? wishlistCount > 99
+                  ? '99+'
+                  : wishlistCount
+                : undefined,
             ...route.options,
           }}
         />
@@ -149,12 +157,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 8,
+    paddingTop: 0,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
-    elevation: 8,
+    elevation: 4,
   },
   tabBarItem: {
     paddingVertical: 2,

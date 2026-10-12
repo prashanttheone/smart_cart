@@ -7,12 +7,13 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Star, Plus } from 'lucide-react-native';
+import { Star, Plus, Heart } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { Text } from './ui/Text';
 import { Product } from '../services/query/productQueries';
-import { useAppDispatch } from '../store';
+import { useAppDispatch, useAppSelector } from '../store';
 import { addToCart } from '../store/slices/cartSlice';
+import { toggleWishlist } from '../store/slices/wishlistSlice';
 
 export interface ProductCardProps {
   product: Product;
@@ -34,6 +35,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   style,
 }) => {
   const dispatch = useAppDispatch();
+  const isInWishlist = useAppSelector((state) =>
+    state.wishlist.items.some((item) => item.id === product.id)
+  );
 
   const discount = product.discountPercentage
     ? Math.round(product.discountPercentage)
@@ -104,6 +108,40 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           style={styles.image}
           resizeMode="contain"
         />
+
+        {/* Wishlist Toggle Button */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() =>
+            dispatch(
+              toggleWishlist({
+                id: product.id,
+                title: product.title,
+                price: product.price,
+                thumbnail: product.thumbnail,
+                category: product.category,
+                brand: product.brand,
+                rating: product.rating,
+                discountPercentage: product.discountPercentage,
+              })
+            )
+          }
+          style={styles.wishlistBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isInWishlist
+              ? `Remove ${product.title} from wishlist`
+              : `Add ${product.title} to wishlist`
+          }
+        >
+          <Heart
+            size={16}
+            color={isInWishlist ? '#EF4444' : colors.textMuted}
+            fill={isInWishlist ? '#EF4444' : 'transparent'}
+            strokeWidth={1.8}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Product Details */}
@@ -190,6 +228,25 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
     zIndex: 2,
+  },
+  wishlistBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
   discountText: {
     color: '#FFFFFF',

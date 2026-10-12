@@ -7,7 +7,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Search, ShoppingCart, X } from 'lucide-react-native';
+import { ArrowLeft, Search, ShoppingCart, X, Heart } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { Text } from '../ui/Text';
 
@@ -18,6 +18,8 @@ export interface ProductHeaderProps {
   onPressBack: () => void;
   onPressCart: () => void;
   cartCount: number;
+  isInWishlist?: boolean;
+  onToggleWishlist?: () => void;
   onSubmitSearch?: (query: string) => void;
   onPressSearch?: () => void;
 }
@@ -29,13 +31,15 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
   onPressBack,
   onPressCart,
   cartCount,
+  isInWishlist = false,
+  onToggleWishlist,
   onSubmitSearch,
   onPressSearch,
 }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 30 }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.row}>
         {/* Back Button */}
@@ -85,6 +89,24 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
             </TouchableOpacity>
           )}
         </TouchableOpacity>
+
+        {/* Wishlist Button */}
+        {onToggleWishlist && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onToggleWishlist}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              size={20}
+              color={isInWishlist ? '#EF4444' : colors.textPrimary}
+              fill={isInWishlist ? '#EF4444' : 'transparent'}
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+        )}
 
         {/* Cart Button with Count Badge */}
         <TouchableOpacity
