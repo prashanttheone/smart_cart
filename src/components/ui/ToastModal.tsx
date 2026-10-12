@@ -1,12 +1,15 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   StyleProp,
   ViewStyle,
+  Modal,
+  Animated,
+  PanResponder,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CheckCircle2,
@@ -70,9 +73,13 @@ export const ToastModal: React.FC<ToastModalProps> = ({
   style,
 }) => {
   const insets = useSafeAreaInsets();
+  const [isRendered, setIsRendered] = useState(isVisible);
+
+  // Animated values
+  const animValue = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto hide for toast mode
+  // Auto hide timer for toast mode
   useEffect(() => {
     if (mode === 'toast' && isVisible && autoHideDuration > 0) {
       if (timerRef.current) {
@@ -90,7 +97,54 @@ export const ToastModal: React.FC<ToastModalProps> = ({
     };
   }, [mode, isVisible, autoHideDuration, onClose]);
 
-  // Color config according to type
+  // Handle visibility transitions
+  useEffect(() => {
+    if (isVisible) {
+      setIsRendered(true);
+      Animated.spring(animValue, {
+        toValue: 1,
+        tension: 65,
+        friction: 9,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(animValue, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setIsRendered(false);
+        }
+      });
+    }
+  }, [isVisible, animValue]);
+
+  // Swipe gesture for toast mode
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => mode === 'toast',
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          if (mode !== 'toast') return false;
+          const { dy } = gestureState;
+          if (position === 'top' && dy < -10) return true;
+          if (position === 'bottom' && dy > 10) return true;
+          return false;
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const { dy } = gestureState;
+          if (position === 'top' && dy < -15) {
+            onClose();
+          } else if (position === 'bottom' && dy > 15) {
+            onClose();
+          }
+        },
+      }),
+    [mode, position, onClose]
+  );
+
+  // Theme definition
   const theme = useMemo(() => {
     switch (type) {
       case 'success':
@@ -145,7 +199,6 @@ export const ToastModal: React.FC<ToastModalProps> = ({
   const IconComponent = theme.IconComponent;
   const isConfirmMode = mode === 'modal' && (type === 'confirm' || showCancel);
 
-  // Button styles helper
   const getButtonStyle = (variant: ButtonVariant, isCancel = false) => {
     switch (variant) {
       case 'danger':
@@ -187,6 +240,7 @@ export const ToastModal: React.FC<ToastModalProps> = ({
     onClose();
   };
 
+  // Memoized dynamic styles
   const toastInsetTop = useMemo(() => ({ paddingTop: insets.top + 10 }), [insets.top]);
   const toastInsetBottom = useMemo(
     () => ({ paddingBottom: insets.bottom + 16 }),
@@ -212,198 +266,245 @@ export const ToastModal: React.FC<ToastModalProps> = ({
     [theme.bgBadge, theme.borderBadge]
   );
 
+  // Animated transforms
+  const modalAnimStyle = useMemo(
+    () => ({
+      opacity: animValue,
+      transform: [
+        {
+          scale: animValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.88, 1],
+          }),
+        },
+      ],
+    }),
+    [animValue]
+  );
+
+  const toastTranslateY = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [position === 'top' ? -80 : 80, 0],
+  });
+
+  const toastAnimStyle = useMemo(
+    () => ({
+      opacity: animValue,
+      transform: [{ translateY: toastTranslateY }],
+    }),
+    [animValue, toastTranslateY]
+  );
+
+  const backdropAnimStyle = useMemo(
+    () => ({
+      opacity: animValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0.58],
+      }),
+    }),
+    [animValue]
+  );
+
+  if (!isRendered) {
+    return null;
+  }
+
   // ----------------------------------------------------
-  // RENDER TOAST MODE
+  // TOAST MODE
   // ----------------------------------------------------
   if (mode === 'toast') {
     const isTop = position === 'top';
-    const swipeDir = isTop ? 'up' : 'down';
 
     return (
       <Modal
-        isVisible={isVisible}
-        hasBackdrop={false}
-        coverScreen={true}
-        animationIn={isTop ? 'slideInDown' : 'slideInUp'}
-        animationOut={isTop ? 'slideOutUp' : 'slideOutDown'}
-        animationInTiming={320}
-        animationOutTiming={280}
-        swipeDirection={swipeDir}
-        onSwipeComplete={onClose}
-        onBackButtonPress={onClose}
-        style={[
-          styles.toastModalStyle,
-          isTop ? styles.toastTop : styles.toastBottom,
-          isTop ? toastInsetTop : toastInsetBottom,
-        ]}
+        transparent
+        visible={isRendered}
+        animationType="none"
+        onRequestClose={onClose}
+        statusBarTranslucent
       >
-        <View style={[styles.toastContainer, toastBorder, style]}>
-          {/* Toast Accent Indicator */}
-          <View style={[styles.toastAccentBar, toastAccentBarBg]} />
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.toastRoot,
+            isTop ? styles.toastTop : styles.toastBottom,
+            isTop ? toastInsetTop : toastInsetBottom,
+          ]}
+        >
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={[styles.toastContainer, toastBorder, toastAnimStyle, style]}
+          >
+            {/* Left Accent Bar */}
+            <View style={[styles.toastAccentBar, toastAccentBarBg]} />
 
-          {/* Left Icon Badge */}
-          <View style={[styles.toastIconWrapper, toastBadgeBg]}>
-            <IconComponent size={20} color={theme.iconColor} strokeWidth={2.2} />
-          </View>
+            {/* Left Icon Badge */}
+            <View style={[styles.toastIconWrapper, toastBadgeBg]}>
+              <IconComponent size={20} color={theme.iconColor} strokeWidth={2.2} />
+            </View>
 
-          {/* Toast Text Content */}
-          <View style={styles.toastTextContent}>
-            <Text weight="bold" size="sm" color="textPrimary" numberOfLines={1}>
-              {title || theme.defaultTitle}
-            </Text>
-            {message ? (
-              <Text
-                variant="caption"
-                color="textSecondary"
-                numberOfLines={2}
-                style={styles.toastMessage}
-              >
-                {message}
+            {/* Text Content */}
+            <View style={styles.toastTextContent}>
+              <Text weight="bold" size="sm" color="textPrimary" numberOfLines={1}>
+                {title || theme.defaultTitle}
               </Text>
-            ) : null}
-            {children}
-          </View>
+              {message ? (
+                <Text
+                  variant="caption"
+                  color="textSecondary"
+                  numberOfLines={2}
+                  style={styles.toastMessage}
+                >
+                  {message}
+                </Text>
+              ) : null}
+              {children}
+            </View>
 
-          {/* Dismiss button */}
-          {showCloseButton && (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={onClose}
-              style={styles.toastCloseBtn}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss notification"
-            >
-              <X size={16} color={colors.textMuted} strokeWidth={2.2} />
-            </TouchableOpacity>
-          )}
+            {/* Dismiss Button */}
+            {showCloseButton && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={onClose}
+                style={styles.toastCloseBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss notification"
+              >
+                <X size={16} color={colors.textMuted} strokeWidth={2.2} />
+              </TouchableOpacity>
+            )}
+          </Animated.View>
         </View>
       </Modal>
     );
   }
 
   // ----------------------------------------------------
-  // RENDER MODAL / ALERT / CONFIRM MODE
+  // MODAL / ALERT / CONFIRM MODE
   // ----------------------------------------------------
   return (
     <Modal
-      isVisible={isVisible}
-      onBackdropPress={onClose}
-      onBackButtonPress={onClose}
-      backdropColor="#0F172A"
-      backdropOpacity={0.6}
-      animationIn="zoomIn"
-      animationOut="fadeOutDown"
-      animationInTiming={280}
-      animationOutTiming={220}
-      backdropTransitionInTiming={280}
-      backdropTransitionOutTiming={220}
-      useNativeDriver
-      hideModalContentWhileAnimating
-      style={styles.centerModalStyle}
+      transparent
+      visible={isRendered}
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View style={[styles.modalCard, style]}>
-        {/* Optional top-right close button */}
-        {showCloseButton && (
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={onClose}
-            style={styles.modalCloseBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Close dialog"
-          >
-            <X size={18} color={colors.textSecondary} strokeWidth={2.2} />
-          </TouchableOpacity>
-        )}
+      <View style={styles.modalRoot}>
+        {/* Animated Dark Backdrop */}
+        <TouchableWithoutFeedback onPress={onClose}>
+          <Animated.View style={[styles.backdrop, backdropAnimStyle]} />
+        </TouchableWithoutFeedback>
 
-        {/* Floating Glowing Icon Badge */}
-        <View style={[styles.modalIconBadge, modalBadgeStyle]}>
-          <IconComponent size={34} color={theme.iconColor} strokeWidth={2.2} />
-        </View>
-
-        {/* Title */}
-        <Text
-          weight="bold"
-          size="lg"
-          color="textPrimary"
-          align="center"
-          style={styles.modalTitle}
-        >
-          {title || theme.defaultTitle}
-        </Text>
-
-        {/* Message */}
-        {message ? (
-          <Text
-            variant="body"
-            color="textSecondary"
-            align="center"
-            style={styles.modalMessage}
-          >
-            {message}
-          </Text>
-        ) : null}
-
-        {/* Optional custom children */}
-        {children && <View style={styles.modalCustomContent}>{children}</View>}
-
-        {/* Action Buttons */}
-        <View style={styles.modalButtonsRow}>
-          {isConfirmMode && (
+        {/* Animated Dialog Card */}
+        <Animated.View style={[styles.modalCard, modalAnimStyle, style]}>
+          {/* Top-Right Close Button */}
+          {showCloseButton && (
             <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleCancel}
-              style={[
-                styles.actionBtn,
-                styles.cancelBtn,
-                getButtonStyle(cancelVariant, true),
-              ]}
+              activeOpacity={0.7}
+              onPress={onClose}
+              style={styles.modalCloseBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
-              accessibilityLabel={cancelText}
+              accessibilityLabel="Close dialog"
             >
-              <Text
-                weight="semiBold"
-                size="md"
-                style={getButtonTextStyle(cancelVariant)}
-              >
-                {cancelText}
-              </Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.2} />
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleConfirm}
-            style={[
-              styles.actionBtn,
-              isConfirmMode ? styles.confirmFlexBtn : styles.singleBtn,
-              getButtonStyle(confirmVariant, false),
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={confirmText}
+          {/* Glowing Icon Badge */}
+          <View style={[styles.modalIconBadge, modalBadgeStyle]}>
+            <IconComponent size={34} color={theme.iconColor} strokeWidth={2.2} />
+          </View>
+
+          {/* Title */}
+          <Text
+            weight="bold"
+            size="lg"
+            color="textPrimary"
+            align="center"
+            style={styles.modalTitle}
           >
+            {title || theme.defaultTitle}
+          </Text>
+
+          {/* Message */}
+          {message ? (
             <Text
-              weight="bold"
-              size="md"
-              style={getButtonTextStyle(confirmVariant)}
+              variant="body"
+              color="textSecondary"
+              align="center"
+              style={styles.modalMessage}
             >
-              {confirmText}
+              {message}
             </Text>
-          </TouchableOpacity>
-        </View>
+          ) : null}
+
+          {/* Custom Children */}
+          {children && <View style={styles.modalCustomContent}>{children}</View>}
+
+          {/* Action Buttons */}
+          <View style={styles.modalButtonsRow}>
+            {isConfirmMode && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleCancel}
+                style={[
+                  styles.actionBtn,
+                  styles.cancelBtn,
+                  getButtonStyle(cancelVariant, true),
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={cancelText}
+              >
+                <Text
+                  weight="semiBold"
+                  size="md"
+                  style={getButtonTextStyle(cancelVariant)}
+                >
+                  {cancelText}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleConfirm}
+              style={[
+                styles.actionBtn,
+                isConfirmMode ? styles.confirmFlexBtn : styles.singleBtn,
+                getButtonStyle(confirmVariant, false),
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={confirmText}
+            >
+              <Text
+                weight="bold"
+                size="md"
+                style={getButtonTextStyle(confirmVariant)}
+              >
+                {confirmText}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  // Modal (Center Dialog) Styles
-  centerModalStyle: {
-    margin: 0,
+  // Modal Root & Backdrop
+  modalRoot: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#0F172A',
   },
   modalCard: {
     width: '100%',
@@ -419,9 +520,9 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.2,
     shadowRadius: 24,
-    elevation: 12,
+    elevation: 14,
   },
   modalCloseBtn: {
     position: 'absolute',
@@ -519,11 +620,10 @@ const styles = StyleSheet.create({
   },
 
   // Toast Styles
-  toastModalStyle: {
-    margin: 0,
+  toastRoot: {
+    flex: 1,
     alignItems: 'center',
     paddingHorizontal: 16,
-    pointerEvents: 'box-none',
   },
   toastTop: {
     justifyContent: 'flex-start',
