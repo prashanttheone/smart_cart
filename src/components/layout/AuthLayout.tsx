@@ -46,8 +46,12 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom + 40, 60) },
+          ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           bounces={false}
         >
           {/* Top Hero Banner with logo1.png */}

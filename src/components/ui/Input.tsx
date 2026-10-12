@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import {
   View,
   TextInput as RNTextInput,
@@ -9,11 +9,17 @@ import {
   ViewStyle,
   TextStyle,
   NativeSyntheticEvent,
-  TextInputFocusEventData,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { Text } from './Text';
+
+export interface InputRef {
+  focus: () => void;
+  blur: () => void;
+  clear: () => void;
+  isFocused: () => boolean;
+}
 
 export interface InputProps extends RNTextInputProps {
   label?: string;
@@ -30,7 +36,7 @@ export interface InputProps extends RNTextInputProps {
   isRequired?: boolean;
 }
 
-export const Input = forwardRef<RNTextInput, InputProps>(
+export const Input = forwardRef<InputRef, InputProps>(
   (
     {
       label,
@@ -49,21 +55,32 @@ export const Input = forwardRef<RNTextInput, InputProps>(
       onBlur,
       secureTextEntry,
       editable = true,
+      autoComplete = 'off',
+      importantForAutofill = 'no',
+      blurOnSubmit = true,
       ...restProps
     },
     ref
   ) => {
+    const innerRef = useRef<any>(null);
     const [isFocused, setIsFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+    useImperativeHandle(ref, () => ({
+      focus: () => innerRef.current?.focus(),
+      blur: () => innerRef.current?.blur(),
+      clear: () => innerRef.current?.clear(),
+      isFocused: () => innerRef.current?.isFocused?.() ?? false,
+    }));
+
+    const handleFocus = (e: NativeSyntheticEvent<any>) => {
       setIsFocused(true);
       if (onFocus) {
         onFocus(e);
       }
     };
 
-    const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+    const handleBlur = (e: NativeSyntheticEvent<any>) => {
       setIsFocused(false);
       if (onBlur) {
         onBlur(e);
@@ -92,7 +109,7 @@ export const Input = forwardRef<RNTextInput, InputProps>(
           </View>
         ) : null}
 
-        {/* Input Box Wrapper with Active on Focus */}
+        {/* Input Box Wrapper - Stable View to avoid touch responder conflicts */}
         <View
           style={[
             styles.inputWrapper,
@@ -107,20 +124,28 @@ export const Input = forwardRef<RNTextInput, InputProps>(
 
           {/* Left Icon */}
           {leftIcon ? (
-            <View style={styles.leftIconWrapper}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => innerRef.current?.focus()}
+              style={styles.leftIconWrapper}
+            >
               {leftIcon}
-            </View>
+            </TouchableOpacity>
           ) : null}
 
           {/* Main Text Input */}
           <RNTextInput
-            ref={ref}
+            ref={innerRef}
             style={[styles.textInput, inputStyle]}
             placeholderTextColor={colors.textMuted}
             onFocus={handleFocus}
             onBlur={handleBlur}
             secureTextEntry={isSecure}
             editable={editable}
+            autoComplete={autoComplete}
+            importantForAutofill={importantForAutofill}
+            blurOnSubmit={blurOnSubmit}
+            underlineColorAndroid="transparent"
             {...restProps}
           />
 
@@ -205,19 +230,17 @@ const styles = StyleSheet.create({
   inputWrapperFocused: {
     borderColor: colors.primary,
     backgroundColor: '#FFFFFF',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
+    borderWidth: 1.5,
   },
   inputWrapperError: {
     borderColor: colors.danger,
     backgroundColor: '#FEF2F2',
+    borderWidth: 1.5,
   },
   inputWrapperDisabled: {
     backgroundColor: '#F1F5F9',
     borderColor: '#E2E8F0',
+    borderWidth: 1.5,
     opacity: 0.7,
   },
   leftIconWrapper: {
