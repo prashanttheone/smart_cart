@@ -1,16 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppDispatch, useAppSelector } from '../store';
-import { clearCart, CartItem } from '../store/slices/cartSlice';
+import { clearCart } from '../store/slices/cartSlice';
 import { selectAddress } from '../store/slices/addressSlice';
 import { selectPaymentMethod } from '../store/slices/checkoutSlice';
 import { placeOrder } from '../store/slices/orderSlice';
@@ -26,15 +27,6 @@ import {
 } from '../components/checkout';
 
 import { colors } from '../theme/colors';
-
-// Fallback sample product matching DummyJSON mascara item in screenshot if cart is empty
-const SAMPLE_CHECKOUT_ITEM: CartItem = {
-  id: 1,
-  title: 'Essence Mascara Lash Princess',
-  price: 8.94,
-  quantity: 1,
-  thumbnail: 'https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png',
-};
 
 export function CheckoutScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -81,19 +73,8 @@ export function CheckoutScreen() {
     );
   }, [availablePaymentMethods, selectedPaymentMethodId]);
 
-  // Items to display (falls back to sample mascara item if cart is empty)
-  const displayItems = useMemo(() => {
-    return cartItems.length > 0 ? cartItems : [SAMPLE_CHECKOUT_ITEM];
-  }, [cartItems]);
-
-  // Totals
-  const subtotal = useMemo(() => {
-    if (cartItems.length > 0) {
-      return cartTotalAmount;
-    }
-    return SAMPLE_CHECKOUT_ITEM.price * SAMPLE_CHECKOUT_ITEM.quantity;
-  }, [cartItems, cartTotalAmount]);
-
+  // Real cart totals
+  const subtotal = cartTotalAmount;
   const deliveryFee = activeDeliveryMethod?.price ?? 0;
   const totalPayable = useMemo(() => {
     return Math.max(0, subtotal + deliveryFee);
@@ -111,12 +92,17 @@ export function CheckoutScreen() {
 
   // Handle placing order
   const handlePlaceOrder = () => {
+    if (cartItems.length === 0) {
+      Alert.alert('Empty Cart', 'Please add items to your cart before placing an order.');
+      return;
+    }
+
     setIsPlacingOrder(true);
 
     setTimeout(() => {
       dispatch(
         placeOrder({
-          items: displayItems,
+          items: cartItems,
           total: totalPayable,
           shippingAddress: `${activeAddress.fullName}, ${activeAddress.streetAddress}`,
           deliveryMethod: activeDeliveryMethod?.title || 'Standard delivery',
@@ -124,10 +110,7 @@ export function CheckoutScreen() {
         })
       );
 
-      if (cartItems.length > 0) {
-        dispatch(clearCart());
-      }
-
+      dispatch(clearCart());
       setIsPlacingOrder(false);
 
       Alert.alert(
@@ -155,75 +138,89 @@ export function CheckoutScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
-        {/* Blue Banner Header */}
-        <CheckoutHeader message="Review your order before payment" />
+      {/* Blue Banner Header */}
+      <CheckoutHeader message="Review your order before payment" />
 
-        {/* Scrollable Order Details */}
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Section 1: Delivery Address (with element-dropdown) */}
-          <AddressSection
-            addresses={addresses}
-            selectedAddressId={selectedAddressId}
-            onSelectAddress={handleSelectAddress}
-            recipientName={activeAddress.fullName}
-            tag={activeAddress.type}
-            addressText={activeAddress.streetAddress}
+      {cartItems.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🛒</Text>
+          <Text style={styles.emptyTitle}>Your cart is empty</Text>
+          <Text style={styles.emptySubtitle}>
+            Please add items from the store to proceed with checkout.
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.browseBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.browseBtnText}>Browse Products</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {/* Scrollable Order Details */}
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Section 1: Delivery Address */}
+            <AddressSection
+              addresses={addresses}
+              selectedAddressId={selectedAddressId}
+              onSelectAddress={handleSelectAddress}
+              recipientName={activeAddress.fullName}
+              tag={activeAddress.type}
+              addressText={activeAddress.streetAddress}
+            />
+
+            {/* Section 2: Order Items */}
+            <OrderItemsList items={cartItems} />
+
+            {/* Section 3: Delivery Method */}
+            <DeliveryMethodSelector
+              title="Delivery Method"
+              methodName={activeDeliveryMethod?.title || 'Standard delivery'}
+              estimate={activeDeliveryMethod?.estimate || 'Ships in 3–5 business days'}
+              isSelected={true}
+            />
+
+            {/* Section 4: Payment Method */}
+            <PaymentMethodSelector
+              paymentMethods={availablePaymentMethods}
+              selectedPaymentMethodId={selectedPaymentMethodId}
+              onSelectPaymentMethod={handleSelectPaymentMethod}
+              title={activePaymentMethod?.title || 'Payment Method'}
+              subtitle={activePaymentMethod?.subtitle || 'UPI, cards, or Cash on Delivery'}
+              actionText="Select"
+            />
+
+            {/* Section 5: Price Details */}
+            <PriceSummary
+              subtotal={subtotal}
+              deliveryFee={deliveryFee}
+              discountApplied={discountApplied}
+              discountText="Applied"
+              totalPayable={totalPayable}
+            />
+          </ScrollView>
+
+          {/* Sticky Bottom Action Bar */}
+          <PlaceOrderBar
+            totalAmount={totalPayable}
+            onPress={handlePlaceOrder}
+            isLoading={isPlacingOrder}
+            disabled={cartItems.length === 0}
           />
-
-          {/* Section 2: Order Items */}
-          <OrderItemsList items={displayItems} />
-
-          {/* Section 3: Delivery Method */}
-          <DeliveryMethodSelector
-            title="Delivery Method"
-            methodName={activeDeliveryMethod?.title || 'Standard delivery'}
-            estimate={activeDeliveryMethod?.estimate || 'Ships in 3–5 business days'}
-            isSelected={true}
-          />
-
-          {/* Section 4: Payment Method (with element-dropdown) */}
-          <PaymentMethodSelector
-            paymentMethods={availablePaymentMethods}
-            selectedPaymentMethodId={selectedPaymentMethodId}
-            onSelectPaymentMethod={handleSelectPaymentMethod}
-            title={activePaymentMethod?.title || 'Payment Method'}
-            subtitle={activePaymentMethod?.subtitle || 'UPI, cards, or Cash on Delivery'}
-            actionText="Select"
-          />
-
-          {/* Section 5: Price Details */}
-          <PriceSummary
-            subtotal={subtotal}
-            deliveryFee={deliveryFee}
-            discountApplied={discountApplied}
-            discountText="Applied"
-            totalPayable={totalPayable}
-          />
-        </ScrollView>
-
-        {/* Sticky Bottom Action Bar */}
-        <PlaceOrderBar
-          totalAmount={totalPayable}
-          onPress={handlePlaceOrder}
-          isLoading={isPlacingOrder}
-        />
-      </View>
-    </SafeAreaView>
+        </>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.surface,
-  },
   container: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -234,6 +231,41 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    backgroundColor: colors.surface,
+  },
+  emptyIcon: {
+    fontSize: 54,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  browseBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  browseBtnText: {
+    color: colors.textInverse,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
 
