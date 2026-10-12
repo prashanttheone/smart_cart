@@ -24,14 +24,16 @@ export const ProductBottomBar: React.FC<ProductBottomBarProps> = ({
   onAddToCart,
   onIncrement,
   onDecrement,
-  currencySymbol = '₹',
+  currencySymbol = '$',
 }) => {
   const insets = useSafeAreaInsets();
   const isOutOfStock = stock !== undefined && stock === 0;
   const isMaxStockReached = stock !== undefined && currentCartQty >= stock;
 
   const effectiveQty = currentCartQty > 0 ? currentCartQty : minimumOrderQuantity;
-  const totalPrice = price * effectiveQty;
+  const totalPriceNum = price * effectiveQty;
+  const formattedTotalPrice =
+    totalPriceNum % 1 === 0 ? totalPriceNum.toString() : totalPriceNum.toFixed(2);
 
   return (
     <View
@@ -43,10 +45,10 @@ export const ProductBottomBar: React.FC<ProductBottomBarProps> = ({
       {/* Price summary */}
       <View style={styles.priceContainer}>
         <Text variant="caption" color="textMuted">
-          Total Price ({effectiveQty} {effectiveQty === 1 ? 'item' : 'items'})
+          Total Price ({effectiveQty} {effectiveQty === 1 ? 'unit' : 'units'})
         </Text>
         <Text weight="bold" size="xl" color="textPrimary">
-          {currencySymbol}{totalPrice}
+          {currencySymbol}{formattedTotalPrice}
         </Text>
       </View>
 

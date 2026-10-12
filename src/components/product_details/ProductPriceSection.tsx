@@ -8,6 +8,7 @@ export interface ProductPriceSectionProps {
   discountPercentage?: number;
   availabilityStatus?: string;
   stock?: number;
+  minimumOrderQuantity?: number;
   currencySymbol?: string;
 }
 
@@ -16,13 +17,29 @@ export const ProductPriceSection: React.FC<ProductPriceSectionProps> = ({
   discountPercentage,
   availabilityStatus,
   stock,
-  currencySymbol = '₹',
+  minimumOrderQuantity,
+  currencySymbol = '$',
 }) => {
-  const discount = discountPercentage ? Math.round(discountPercentage) : 0;
-  const originalPrice =
-    discount > 0 ? Math.round((price * 100) / (100 - discount)) : null;
+  const discount = discountPercentage ? Number(discountPercentage.toFixed(1)) : 0;
+  const originalPriceNum =
+    discount > 0 ? (price * 100) / (100 - discount) : null;
 
-  const isLowStock = stock !== undefined && stock > 0 && stock <= 5;
+  const formattedPrice =
+    typeof price === 'number'
+      ? price % 1 === 0
+        ? price.toString()
+        : price.toFixed(2)
+      : price;
+
+  const formattedOriginalPrice =
+    originalPriceNum !== null ? originalPriceNum.toFixed(2) : null;
+
+  const savingsNum =
+    originalPriceNum !== null
+      ? (originalPriceNum - price).toFixed(2)
+      : null;
+
+  const isLowStock = stock !== undefined && stock > 0 && stock <= 10;
   const isOutOfStock = stock !== undefined && stock === 0;
 
   return (
@@ -31,17 +48,17 @@ export const ProductPriceSection: React.FC<ProductPriceSectionProps> = ({
       <View style={styles.row}>
         <View style={styles.priceLeft}>
           <Text weight="bold" size="2xl" color="textPrimary">
-            {currencySymbol}{price}
+            {currencySymbol}{formattedPrice}
           </Text>
-          {originalPrice !== null && (
+          {formattedOriginalPrice !== null && (
             <Text variant="caption" color="textMuted" style={styles.originalPrice}>
-              {currencySymbol}{originalPrice}
+              {currencySymbol}{formattedOriginalPrice}
             </Text>
           )}
           {discount > 0 && (
             <View style={styles.saveBadge}>
               <Text weight="semiBold" size="xs" style={styles.saveBadgeText}>
-                Save {discount}%
+                {discount}% OFF
               </Text>
             </View>
           )}
@@ -77,14 +94,30 @@ export const ProductPriceSection: React.FC<ProductPriceSectionProps> = ({
         </View>
       </View>
 
+      {/* Stock count and minimum order info */}
+      <View style={styles.subInfoRow}>
+        {stock !== undefined && stock > 0 && (
+          <Text variant="caption" color="textSecondary">
+            {stock} units in stock
+          </Text>
+        )}
+        {minimumOrderQuantity !== undefined && minimumOrderQuantity > 1 && (
+          <View style={styles.moqBadge}>
+            <Text variant="caption" weight="semiBold" color="primary">
+              Min. Order: {minimumOrderQuantity} units
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* Taxes & Savings Note */}
       <View style={styles.footerNote}>
         <Text variant="caption" color="textMuted">
           Inclusive of all taxes
         </Text>
-        {originalPrice !== null && (
+        {savingsNum !== null && (
           <Text variant="caption" weight="semiBold" color="secondary">
-            You save {currencySymbol}{originalPrice - price}
+            You save {currencySymbol}{savingsNum}
           </Text>
         )}
       </View>
@@ -105,7 +138,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   priceLeft: {
     flexDirection: 'row',
@@ -152,6 +185,18 @@ const styles = StyleSheet.create({
   },
   stockDotOut: {
     backgroundColor: '#EF4444',
+  },
+  subInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  moqBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   footerNote: {
     flexDirection: 'row',

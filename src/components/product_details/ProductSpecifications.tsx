@@ -42,7 +42,7 @@ export const ProductSpecifications: React.FC<ProductSpecificationsProps> = ({
             Item Weight
           </Text>
           <Text variant="caption" weight="medium" color="textPrimary">
-            {weight} kg
+            {weight >= 1000 ? `${(weight / 1000).toFixed(1)} kg` : `${weight} g`}
           </Text>
         </View>
       )}

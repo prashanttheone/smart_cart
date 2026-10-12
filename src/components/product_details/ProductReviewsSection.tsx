@@ -60,11 +60,16 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
                 <Text weight="semiBold" size="sm" color="textPrimary">
                   {rev.reviewerName}
                 </Text>
-                {formattedDate ? (
-                  <Text variant="caption" color="textMuted" size="xs">
-                    {formattedDate}
+                <View style={styles.verifiedRow}>
+                  <Text variant="caption" weight="medium" style={styles.verifiedText}>
+                    ✓ Verified Buyer
                   </Text>
-                ) : null}
+                  {formattedDate ? (
+                    <Text variant="caption" color="textMuted" size="xs">
+                      • {formattedDate}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
 
               <View style={styles.ratingBadge}>
@@ -145,6 +150,16 @@ const styles = StyleSheet.create({
   comment: {
     fontStyle: 'italic',
     lineHeight: 20,
+  },
+  verifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  verifiedText: {
+    color: '#10B981',
+    fontSize: 11,
   },
 });
 
