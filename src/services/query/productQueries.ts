@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '../api/apiClient';
 import { ENDPOINTS } from '../../app/lib/EndPoint';
 
@@ -60,6 +60,54 @@ export function useProductsQuery(limit = 10) {
     queryKey: ['products', limit],
     queryFn: () =>
       api.get<ProductsResponse>(ENDPOINTS.PRODUCTS.PAGINATED({ limit })),
+  });
+}
+
+export interface InfiniteProductsParams {
+  limit?: number;
+  category?: string;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
+}
+
+/**
+ * Infinite query hook for paginated products with automatic next limit/skip fetching
+ */
+export function useInfiniteProductsQuery({
+  limit = 10,
+  category,
+  sortBy,
+  order,
+}: InfiniteProductsParams = {}) {
+  return useInfiniteQuery({
+    queryKey: ['products', 'infinite', { limit, category, sortBy, order }],
+    queryFn: ({ pageParam = 0 }) => {
+      if (category) {
+        return api.get<ProductsResponse>(
+          ENDPOINTS.PRODUCTS.BY_CATEGORY(category, {
+            limit,
+            skip: pageParam,
+            sortBy,
+            order,
+          })
+        );
+      }
+      return api.get<ProductsResponse>(
+        ENDPOINTS.PRODUCTS.PAGINATED({
+          limit,
+          skip: pageParam,
+          sortBy,
+          order,
+        })
+      );
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const nextSkip = lastPage.skip + lastPage.limit;
+      return nextSkip < lastPage.total ? nextSkip : undefined;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    gcTime: 1000 * 60 * 30,
   });
 }
 

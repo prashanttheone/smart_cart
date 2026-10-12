@@ -20,6 +20,7 @@ export interface ProductCardProps {
   onAddToCart?: (product: Product) => void;
   currencySymbol?: string;
   cardWidth?: number;
+  flex?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -29,6 +30,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   currencySymbol = '₹',
   cardWidth = 168,
+  flex = false,
   style,
 }) => {
   const dispatch = useAppDispatch();
@@ -38,8 +40,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     : 0;
 
   const originalPrice = discount > 0
-    ? Math.round((product.price * 100) / (100 - discount))
+    ? (product.price * 100) / (100 - discount)
     : null;
+
+  const formattedPrice =
+    typeof product.price === 'number'
+      ? product.price % 1 === 0
+        ? product.price.toString()
+        : product.price.toFixed(2)
+      : product.price;
+
+  const formattedOriginalPrice =
+    originalPrice !== null
+      ? originalPrice % 1 === 0
+        ? Math.round(originalPrice).toString()
+        : originalPrice.toFixed(2)
+      : null;
 
   const handleAddToCart = () => {
     if (onAddToCart) {
@@ -69,7 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     <TouchableOpacity
       activeOpacity={0.88}
       onPress={() => onPress?.(product)}
-      style={[styles.card, { width: cardWidth }, style]}
+      style={[styles.card, flex ? styles.flexCard : { width: cardWidth }, style]}
       accessibilityRole="button"
       accessibilityLabel={`Product ${product.title}`}
     >
@@ -106,11 +122,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <View style={styles.priceRow}>
           <View style={styles.priceContainer}>
             <Text weight="bold" size="base" color="textPrimary">
-              {currencySymbol}{product.price}
+              {currencySymbol}{formattedPrice}
             </Text>
-            {originalPrice !== null && (
+            {formattedOriginalPrice !== null && (
               <Text variant="caption" color="textMuted" style={styles.originalPrice}>
-                {currencySymbol}{originalPrice}
+                {currencySymbol}{formattedOriginalPrice}
               </Text>
             )}
           </View>
@@ -153,6 +169,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+  },
+  flexCard: {
+    flex: 1,
   },
   imageWrapper: {
     height: 125,

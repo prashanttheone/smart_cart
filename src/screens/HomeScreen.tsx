@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +14,7 @@ import { HomeHeader } from '../components/HomeHeader';
 import { HomeSearchBar } from '../components/HomeSearchBar';
 import { CategoryList } from '../components/CategoryList';
 import { DealsOfTheDay } from '../components/DealsOfTheDay';
+import { ProductGrid } from '../components/ProductGrid';
 import { Text } from '../components/ui/Text';
 
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
@@ -30,7 +30,6 @@ export function HomeScreen() {
     address: 'Bangalore, 560001',
   });
 
-
   const handleNotificationsPress = () => {
     Alert.alert('Notifications', 'You have no unread notifications right now.');
   };
@@ -42,6 +41,65 @@ export function HomeScreen() {
   const handleFilterPress = () => {
     Alert.alert('Filters', 'Open filter sheet / drawer.');
   };
+
+  // Header content rendered at the top of the paginated product grid
+  const renderListHeader = () => (
+    <>
+      {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
+      <View style={styles.searchContainer}>
+        <HomeSearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onDebouncedSearch={(q) => {
+            setDebouncedQuery(q);
+          }}
+          onClear={() => {
+            setSearchQuery('');
+            setDebouncedQuery('');
+          }}
+          rightActionType="scan"
+          onPressScan={handleScanPress}
+          onPressFilter={handleFilterPress}
+        />
+
+        {debouncedQuery.length > 0 && (
+          <View style={styles.searchActivePill}>
+            <Text variant="caption" color="primaryLight">
+              Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Special Offer Banner */}
+      <View style={styles.bannerCard}>
+        <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
+          SPECIAL OFFER
+        </Text>
+        <Text variant="h2" style={styles.bannerTitle}>
+          Big Deals Everyday
+        </Text>
+        <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
+          Up to 50% OFF
+        </Text>
+      </View>
+
+      {/* Dynamic Category Slugs List */}
+      <CategoryList
+        selectedCategory={selectedCategory}
+        onSelectCategory={(slug) =>
+          setSelectedCategory((prev) => (prev === slug ? undefined : slug))
+        }
+      />
+
+      {/* Deals of the Day Section */}
+      <DealsOfTheDay
+        onPressProduct={(product) =>
+          navigation.navigate('ProductDetails', { product })
+        }
+      />
+    </>
+  );
 
   return (
     <View style={styles.container}>
@@ -57,66 +115,15 @@ export function HomeScreen() {
         onPressCart={() => navigation.navigate('Cart')}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
-        <View style={styles.searchContainer}>
-          <HomeSearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onDebouncedSearch={(q) => {
-              setDebouncedQuery(q);
-            }}
-            onClear={() => {
-              setSearchQuery('');
-              setDebouncedQuery('');
-            }}
-            rightActionType="scan"
-            onPressScan={handleScanPress}
-            onPressFilter={handleFilterPress}
-          />
-
-          {debouncedQuery.length > 0 && (
-            <View style={styles.searchActivePill}>
-              <Text variant="caption" color="primaryLight">
-                Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Demo banner showcasing Poppins typography */}
-        <View style={styles.bannerCard}>
-          <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
-            SPECIAL OFFER
-          </Text>
-          <Text variant="h2" style={styles.bannerTitle}>
-            Big Deals Everyday
-          </Text>
-          <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
-            Up to 50% OFF
-          </Text>
-        </View>
-
-        {/* Dynamic Category Slugs List */}
-        <CategoryList
-          selectedCategory={selectedCategory}
-          onSelectCategory={(slug) =>
-            setSelectedCategory((prev) => (prev === slug ? undefined : slug))
-          }
-        />
-
-        {/* Deals of the Day Section */}
-        <DealsOfTheDay
-          onPressProduct={(product) =>
-            navigation.navigate('ProductDetails', { product })
-          }
-        />
-      </ScrollView>
+      {/* 2-Column Paginated Grid with Auto Scroll-based Next Limit/Skip Fetching */}
+      <ProductGrid
+        category={selectedCategory}
+        limit={10}
+        onPressProduct={(product) =>
+          navigation.navigate('ProductDetails', { product })
+        }
+        ListHeaderComponent={renderListHeader()}
+      />
     </View>
   );
 }
@@ -125,12 +132,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 24,
   },
   searchContainer: {
     paddingHorizontal: 16,
