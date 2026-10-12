@@ -117,6 +117,11 @@ export function ProductDetailsScreen() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onClearSearch={() => setSearchQuery('')}
+        onSubmitSearch={(query) => {
+          if (query.trim()) {
+            navigation.navigate('Search', { initialQuery: query.trim() });
+          }
+        }}
         onPressBack={() => navigation.goBack()}
         onPressCart={() => navigation.navigate('Cart')}
         cartCount={cartTotalCount}

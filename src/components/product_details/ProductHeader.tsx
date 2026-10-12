@@ -4,7 +4,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Platform,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, ShoppingCart, X } from 'lucide-react-native';
@@ -18,6 +18,8 @@ export interface ProductHeaderProps {
   onPressBack: () => void;
   onPressCart: () => void;
   cartCount: number;
+  onSubmitSearch?: (query: string) => void;
+  onPressSearch?: () => void;
 }
 
 export const ProductHeader: React.FC<ProductHeaderProps> = ({
@@ -27,11 +29,14 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
   onPressBack,
   onPressCart,
   cartCount,
+  onSubmitSearch,
+  onPressSearch,
 }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 30 }]}>
+      <StatusBar barStyle="dark-content" />
       <View style={styles.row}>
         {/* Back Button */}
         <TouchableOpacity
@@ -44,11 +49,16 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
           <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
         </TouchableOpacity>
 
-        {/* Search Bar */}
-        <View style={styles.searchWrapper}>
+        {/* Search Bar matching SearchScreen */}
+        <TouchableOpacity
+          activeOpacity={onPressSearch ? 0.8 : 1}
+          onPress={onPressSearch}
+          disabled={!onPressSearch}
+          style={styles.searchWrapper}
+        >
           <Search
             size={18}
-            color={colors.textMuted}
+            color={colors.textSecondary}
             strokeWidth={2}
             style={styles.searchIcon}
           />
@@ -56,6 +66,7 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={onSearchChange}
+            onSubmitEditing={() => onSubmitSearch?.(searchQuery)}
             placeholder="Search in SmartCart..."
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
@@ -73,7 +84,7 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
               <X size={15} color={colors.textSecondary} strokeWidth={2.2} />
             </TouchableOpacity>
           )}
-        </View>
+        </TouchableOpacity>
 
         {/* Cart Button with Count Badge */}
         <TouchableOpacity
@@ -98,17 +109,18 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({
 };
 
 const styles = StyleSheet.create({
+  // Safe area top bar with shadow grey color matching SearchScreen
   container: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#f1f5f9', // Shadow grey color for top notch, battery & network readability
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 3,
+    borderBottomColor: '#e2e8f0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
     zIndex: 10,
   },
   row: {
@@ -117,31 +129,35 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   searchWrapper: {
     flex: 1,
-    height: 40,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
     paddingHorizontal: 12,
   },
   searchIcon: {
-    marginRight: 6,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
-    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+    paddingVertical: 0,
   },
   clearBtn: {
     padding: 4,
@@ -150,7 +166,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.danger,
     minWidth: 18,
     height: 18,
     borderRadius: 9,

@@ -25,6 +25,7 @@ export type RootStackParamList = {
   ProductDetails: { product?: Product; productId?: number };
   Cart: undefined;
   Checkout: undefined;
+  Search: { initialQuery?: string } | undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =

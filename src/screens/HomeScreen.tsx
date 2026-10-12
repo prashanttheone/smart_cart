@@ -50,6 +50,7 @@ export function HomeScreen() {
         <HomeSearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
+          onPressBar={() => navigation.navigate('Search', { initialQuery: searchQuery })}
           onDebouncedSearch={(q) => {
             setDebouncedQuery(q);
           }}

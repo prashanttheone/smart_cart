@@ -10,6 +10,7 @@ import ProductDetailsScreen from '../screens/ProductDetailsScreen';
 import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
+import SearchScreen from '../screens/SearchScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -66,6 +67,14 @@ export const STACK_ROUTES: ReadonlyArray<StackRouteConfig> = [
     options: {
       title: 'Order Checkout',
       presentation: 'modal',
+    },
+  },
+  {
+    name: 'Search',
+    component: SearchScreen,
+    options: {
+      headerShown: false,
+      animation: 'fade',
     },
   },
 ] as const;
