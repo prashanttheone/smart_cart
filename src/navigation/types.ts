@@ -26,6 +26,7 @@ export type RootStackParamList = {
   Cart: undefined;
   Checkout: undefined;
   Search: { initialQuery?: string } | undefined;
+  Auth: { initialMode?: 'login' | 'register' } | undefined;
   Login: undefined;
   Register: undefined;
 };

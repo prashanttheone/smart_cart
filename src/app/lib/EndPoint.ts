@@ -217,8 +217,6 @@ export const ENDPOINTS = {
    */
   AUTH: {
     BASE_URL: SERVER_BASE_URL,
-    BASE_PATH: '/api/auth',
-
     // POST /api/auth/register (User registration)
     REGISTER: '/api/auth/register',
 
