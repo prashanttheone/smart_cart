@@ -11,7 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { colors } from '../theme/colors';
-import { Text } from '../components/ui/Text';
+import { Text, useToastModal } from '../components/ui';
 import { RootStackParamList } from '../navigation/types';
 import { useAppDispatch, useAppSelector } from '../store';
 import { addToCart, updateQuantity, removeFromCart } from '../store/slices/cartSlice';
@@ -45,6 +45,7 @@ export function ProductDetailsScreen() {
   const navigation = useNavigation<ProductDetailsNavigationProp>();
   const route = useRoute<ProductDetailsScreenRouteProp>();
   const dispatch = useAppDispatch();
+  const { showToast } = useToastModal();
 
   const { product: initialProduct, productId: routeProductId } =
     route.params || {};
@@ -86,6 +87,13 @@ export function ProductDetailsScreen() {
         discountPercentage: product.discountPercentage,
       })
     );
+    showToast({
+      type: isInWishlist ? 'info' : 'success',
+      title: isInWishlist ? 'Removed from Wishlist' : 'Saved to Wishlist ❤️',
+      message: `${product.title} ${
+        isInWishlist ? 'removed from saved items.' : 'added to your wishlist.'
+      }`,
+    });
   };
 
   // Cart quantity for this item
@@ -105,6 +113,11 @@ export function ProductDetailsScreen() {
         quantity: initialQty,
       })
     );
+    showToast({
+      type: 'success',
+      title: 'Added to Cart 🛒',
+      message: `${product.title} added to your cart.`,
+    });
   };
 
   const handleIncrement = () => {

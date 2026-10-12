@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-  Alert,
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Heart, ShoppingBag, ShoppingCart, Star, Trash2 } from 'lucide-react-native';
 
 import { colors } from '../theme/colors';
-import { Text } from '../components/ui/Text';
+import { Text, useToastModal } from '../components/ui';
 import { useAppDispatch, useAppSelector } from '../store';
 import {
   removeFromWishlist,
@@ -28,6 +27,7 @@ export function WishlistScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
+  const { showConfirm, showToast } = useToastModal();
 
   const { items, totalCount } = useAppSelector((state) => state.wishlist);
 
@@ -50,6 +50,11 @@ export function WishlistScreen() {
 
   const handleRemove = (item: WishlistItem) => {
     dispatch(removeFromWishlist(item.id));
+    showToast({
+      type: 'info',
+      title: 'Removed from Wishlist',
+      message: `${item.title} removed from saved items.`,
+    });
   };
 
   const handleAddToCart = (item: WishlistItem) => {
@@ -62,21 +67,30 @@ export function WishlistScreen() {
         quantity: 1,
       })
     );
+    showToast({
+      type: 'success',
+      title: 'Added to Cart',
+      message: `${item.title} moved to your cart.`,
+    });
   };
 
   const handleClearAll = () => {
-    Alert.alert(
-      'Clear Wishlist',
-      'Are you sure you want to remove all items from your wishlist?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: () => dispatch(clearWishlist()),
-        },
-      ]
-    );
+    showConfirm({
+      type: 'confirm',
+      title: 'Clear Wishlist',
+      message: 'Are you sure you want to remove all saved items from your wishlist?',
+      confirmText: 'Clear All',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        dispatch(clearWishlist());
+        showToast({
+          type: 'info',
+          title: 'Wishlist Cleared',
+          message: 'All items have been removed.',
+        });
+      },
+    });
   };
 
   const renderWishlistItem = ({ item }: { item: WishlistItem }) => {

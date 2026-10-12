@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,6 +17,7 @@ import { selectAddress } from '../store/slices/addressSlice';
 import { selectPaymentMethod } from '../store/slices/checkoutSlice';
 import { placeOrder } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
+import { useToastModal } from '../components/ui';
 import {
   CheckoutHeader,
   AddressSection,
@@ -34,6 +34,7 @@ export function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
+  const { showAlert, showConfirm } = useToastModal();
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -96,7 +97,11 @@ export function CheckoutScreen() {
   // Handle placing order
   const handlePlaceOrder = () => {
     if (cartItems.length === 0) {
-      Alert.alert('Empty Cart', 'Please add items to your cart before placing an order.');
+      showAlert({
+        type: 'warning',
+        title: 'Empty Cart',
+        message: 'Please add items to your cart before placing an order.',
+      });
       return;
     }
 
@@ -116,27 +121,24 @@ export function CheckoutScreen() {
       dispatch(clearCart());
       setIsPlacingOrder(false);
 
-      Alert.alert(
-        'Order Placed! 🎉',
-        `Your order of $${totalPayable.toFixed(2)} has been confirmed successfully.`,
-        [
-          {
-            text: 'Track Order',
-            onPress: () => {
-              navigation.goBack();
-              navigation.navigate('DrawerRoot', {
-                screen: 'MainTabs',
-                params: { screen: 'Orders' },
-              } as any);
-            },
-          },
-          {
-            text: 'Continue Shopping',
-            style: 'cancel',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showConfirm({
+        type: 'success',
+        title: 'Order Placed! 🎉',
+        message: `Your order of ₹${totalPayable.toFixed(2)} has been confirmed successfully.`,
+        confirmText: 'Track Order',
+        confirmVariant: 'success',
+        cancelText: 'Continue Shopping',
+        onConfirm: () => {
+          navigation.goBack();
+          navigation.navigate('DrawerRoot', {
+            screen: 'MainTabs',
+            params: { screen: 'Orders' },
+          } as any);
+        },
+        onCancel: () => {
+          navigation.goBack();
+        },
+      });
     }, 900);
   };
 

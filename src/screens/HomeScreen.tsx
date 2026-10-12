@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
-  Alert,
   StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,13 +15,14 @@ import { HomeSearchBar } from '../components/HomeSearchBar';
 import { CategoryList } from '../components/CategoryList';
 import { DealsOfTheDay } from '../components/DealsOfTheDay';
 import { ProductGrid } from '../components/ProductGrid';
-import { Text } from '../components/ui/Text';
+import { Text, useToastModal } from '../components/ui';
 
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
   NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavProp>();
+  const { showAlert, showToast } = useToastModal();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -32,15 +32,27 @@ export function HomeScreen() {
   });
 
   const handleNotificationsPress = () => {
-    Alert.alert('Notifications', 'You have no unread notifications right now.');
+    showAlert({
+      type: 'info',
+      title: 'Notifications',
+      message: 'You have no unread notifications right now.',
+    });
   };
 
   const handleScanPress = () => {
-    Alert.alert('Barcode & QR Scanner', 'Ready to scan product barcode.');
+    showAlert({
+      type: 'info',
+      title: 'Barcode & QR Scanner',
+      message: 'Ready to scan product barcode or QR code.',
+    });
   };
 
   const handleFilterPress = () => {
-    Alert.alert('Filters', 'Open filter sheet / drawer.');
+    showToast({
+      type: 'info',
+      title: 'Filters',
+      message: 'Product filters will appear here.',
+    });
   };
 
   // Header content rendered at the top of the paginated product grid

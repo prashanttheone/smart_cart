@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -8,12 +7,14 @@ import {
   View,
 } from 'react-native';
 import { colors } from '../theme/colors';
+import { useToastModal } from '../components/ui';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logout, setUser } from '../store/slices/authSlice';
 import { appStorage } from '../services/storage/asyncStorage';
 
 export function ProfileScreen() {
   const dispatch = useAppDispatch();
+  const { showToast, showConfirm } = useToastModal();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [note, setNote] = useState('');
   const [savedNote, setSavedNote] = useState<string | null>(null);
@@ -29,12 +30,30 @@ export function ProfileScreen() {
     await appStorage.setItem('@user_note', note);
     setSavedNote(note);
     setNote('');
-    Alert.alert('AsyncStorage', 'Saved note successfully to local device storage!');
+    showToast({
+      type: 'success',
+      title: 'Note Saved',
+      message: 'Saved note successfully to local device storage!',
+    });
   };
 
   const handleClearNote = async () => {
-    await appStorage.removeItem('@user_note');
-    setSavedNote(null);
+    showConfirm({
+      type: 'confirm',
+      title: 'Clear Saved Note',
+      message: 'Are you sure you want to remove your stored note?',
+      confirmText: 'Clear Note',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        await appStorage.removeItem('@user_note');
+        setSavedNote(null);
+        showToast({
+          type: 'info',
+          title: 'Note Cleared',
+          message: 'Saved note was removed from local storage.',
+        });
+      },
+    });
   };
 
   return (
