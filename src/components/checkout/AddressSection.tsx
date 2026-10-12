@@ -1,14 +1,15 @@
-import React, { useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { MapPin, House, Briefcase, MapPinned, Check, ChevronDown } from 'lucide-react-native';
-import { Dropdown } from 'react-native-element-dropdown';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { MapPin, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { Address } from '../../store/slices/addressSlice';
+import { AddressBottomSheet } from './AddressBottomSheet';
 
 export interface AddressSectionProps {
   addresses?: Address[];
   selectedAddressId?: string;
   onSelectAddress?: (item: Address) => void;
+  onAddNewAddress?: () => void;
   recipientName?: string;
   tag?: string;
   addressText?: string;
@@ -19,11 +20,13 @@ export function AddressSection({
   addresses = [],
   selectedAddressId,
   onSelectAddress,
+  onAddNewAddress,
   recipientName = 'Prashant Kumar',
   tag = 'Home',
   addressText = 'Your saved delivery address goes here',
+  onChangePress,
 }: AddressSectionProps) {
-  const dropdownRef = useRef<any>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const activeAddress =
     addresses.find((a) => a.id === selectedAddressId) ||
@@ -40,128 +43,60 @@ export function AddressSection({
       isDefault: true,
     };
 
-  const handleSelect = (item: Address) => {
-    onSelectAddress?.(item);
+  const handleOpenSheet = () => {
+    if (onChangePress) {
+      onChangePress();
+    } else {
+      setIsSheetOpen(true);
+    }
   };
 
-  const renderDropdownItem = (item: Address, selected?: boolean) => {
-    const isHome = item.type?.toLowerCase().includes('home');
-    const isWork =
-      item.type?.toLowerCase().includes('work') ||
-      item.type?.toLowerCase().includes('office');
-
-    return (
-      <View
-        style={[
-          styles.dropdownItem,
-          selected && styles.dropdownItemSelected,
-        ]}
-      >
-        <View
-          style={[
-            styles.itemIconBox,
-            selected && styles.itemIconBoxSelected,
-          ]}
-        >
-          {isHome ? (
-            <House
-              size={18}
-              color={selected ? colors.primary : colors.textSecondary}
-            />
-          ) : isWork ? (
-            <Briefcase
-              size={18}
-              color={selected ? colors.primary : colors.textSecondary}
-            />
-          ) : (
-            <MapPinned
-              size={18}
-              color={selected ? colors.primary : colors.textSecondary}
-            />
-          )}
-        </View>
-
-        <View style={styles.itemTextCol}>
-          <View style={styles.itemTagRow}>
-            <Text style={styles.itemNameText}>{item.fullName}</Text>
-            <View style={styles.tagBadge}>
-              <Text style={styles.tagBadgeText}>{item.type}</Text>
-            </View>
-          </View>
-          <Text style={styles.itemAddressText} numberOfLines={2}>
-            {item.streetAddress}
-            {item.city ? `, ${item.city}` : ''}
-          </Text>
-        </View>
-
-        {selected && (
-          <View style={styles.checkCircle}>
-            <Check size={14} color="#ffffff" strokeWidth={2.8} />
-          </View>
-        )}
-      </View>
-    );
+  const handleSelectFromSheet = (selected: Address) => {
+    onSelectAddress?.(selected);
+    setIsSheetOpen(false);
   };
 
   return (
     <View style={styles.container}>
-      {addresses.length > 0 ? (
-        <Dropdown
-          ref={dropdownRef}
-          data={addresses}
-          labelField="streetAddress"
-          valueField="id"
-          value={activeAddress.id}
-          onChange={handleSelect}
-          style={styles.dropdown}
-          containerStyle={styles.dropdownMenu}
-          activeColor={colors.primarySoft}
-          showsVerticalScrollIndicator={false}
-          renderLeftIcon={() => (
-            <View style={styles.leftRow}>
-              {/* Soft blue rounded icon container */}
-              <View style={styles.iconBox}>
-                <MapPin size={22} color={colors.primary} />
-              </View>
-
-              {/* Address Info */}
-              <View style={styles.infoCol}>
-                <Text style={styles.heading}>Delivery Address</Text>
-                <Text style={styles.nameTagText}>
-                  {activeAddress.fullName} · {activeAddress.type}
-                </Text>
-                <Text style={styles.addressText} numberOfLines={2}>
-                  {activeAddress.streetAddress}
-                </Text>
-              </View>
-            </View>
-          )}
-          renderRightIcon={() => (
-            <View style={styles.changeActionWrapper}>
-              <Text style={styles.changeText}>Change</Text>
-              <ChevronDown size={15} color={colors.primary} strokeWidth={2.5} />
-            </View>
-          )}
-          renderItem={renderDropdownItem}
-        />
-      ) : (
-        <View style={styles.row}>
-          <View style={styles.iconBox}>
-            <MapPin size={22} color={colors.primary} />
-          </View>
-          <View style={styles.infoCol}>
-            <Text style={styles.heading}>Delivery Address</Text>
-            <Text style={styles.nameTagText}>
-              {recipientName} · {tag}
-            </Text>
-            <Text style={styles.addressText} numberOfLines={2}>
-              {addressText}
-            </Text>
-          </View>
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={handleOpenSheet}
+        style={styles.cardRow}
+      >
+        {/* Soft blue rounded icon container */}
+        <View style={styles.iconBox}>
+          <MapPin size={22} color={colors.primary} />
         </View>
-      )}
+
+        {/* Address Info */}
+        <View style={styles.infoCol}>
+          <Text style={styles.heading}>Delivery Address</Text>
+          <Text style={styles.nameTagText}>
+            {activeAddress.fullName} · {activeAddress.type}
+          </Text>
+          <Text style={styles.addressText} numberOfLines={2}>
+            {activeAddress.streetAddress}
+          </Text>
+        </View>
+
+        {/* Change button */}
+        <View style={styles.changeActionWrapper}>
+          <Text style={styles.changeText}>Change</Text>
+          <ChevronRight size={15} color={colors.primary} strokeWidth={2.5} />
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.divider} />
+
+      {/* Custom Drawer / Bottom Sheet for Address Selection */}
+      <AddressBottomSheet
+        visible={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        addresses={addresses}
+        selectedAddressId={activeAddress.id}
+        onSelectAddress={handleSelectFromSheet}
+        onAddNewAddress={onAddNewAddress}
+      />
     </View>
   );
 }
@@ -170,18 +105,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 16,
   },
-  dropdown: {
-    paddingVertical: 2,
-  },
-  leftRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginRight: 10,
-  },
-  row: {
+  cardRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
@@ -197,6 +123,7 @@ const styles = StyleSheet.create({
   },
   infoCol: {
     flex: 1,
+    marginRight: 10,
   },
   heading: {
     fontSize: 16,
@@ -218,97 +145,20 @@ const styles = StyleSheet.create({
   changeActionWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    backgroundColor: colors.primarySoft,
-    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+    gap: 2,
+    alignSelf: 'center',
   },
   changeText: {
     color: colors.primary,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
     marginTop: 18,
-  },
-  dropdownMenu: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 8,
-    overflow: 'hidden',
-    paddingVertical: 6,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  dropdownItemSelected: {
-    backgroundColor: colors.primarySoft,
-  },
-  itemIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.surfaceVariant,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  itemIconBoxSelected: {
-    backgroundColor: '#ffffff',
-  },
-  itemTextCol: {
-    flex: 1,
-  },
-  itemTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 3,
-    gap: 8,
-  },
-  itemNameText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  tagBadge: {
-    backgroundColor: colors.surfaceVariant,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  tagBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  itemAddressText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 16,
-  },
-  checkCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
   },
 });
 
