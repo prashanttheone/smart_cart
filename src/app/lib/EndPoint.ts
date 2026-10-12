@@ -1,0 +1,134 @@
+/**
+ * DummyJSON API Endpoints
+ * Base URL: https://dummyjson.com
+ */
+
+export const BASE_URL = 'https://dummyjson.com';
+
+export interface ProductQueryParams {
+  limit?: number;
+  skip?: number;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
+  select?: string | string[];
+  modifiedAfter?: string;
+  q?: string;
+}
+
+export interface CategoryItem {
+  slug: string;
+  name: string;
+  url: string;
+}
+
+/**
+ * Builds query string for /products with support for pagination, sorting, field selection, and date filter.
+ */
+export function buildProductQueryString(params?: ProductQueryParams): string {
+  if (!params) return '';
+
+  const searchParams = new URLSearchParams();
+
+  if (params.limit !== undefined) {
+    searchParams.append('limit', String(params.limit));
+  }
+  if (params.skip !== undefined) {
+    searchParams.append('skip', String(params.skip));
+  }
+  if (params.sortBy) {
+    searchParams.append('sortBy', params.sortBy);
+  }
+  if (params.order) {
+    searchParams.append('order', params.order);
+  }
+  if (params.select) {
+    const selectStr = Array.isArray(params.select)
+      ? params.select.join(',')
+      : params.select;
+    searchParams.append('select', selectStr);
+  }
+  if (params.modifiedAfter) {
+    searchParams.append('modifiedAfter', params.modifiedAfter);
+  }
+  if (params.q) {
+    searchParams.append('q', params.q);
+  }
+
+  const queryStr = searchParams.toString();
+  return queryStr ? `?${queryStr}` : '';
+}
+
+export const ENDPOINTS = {
+  BASE_URL,
+
+  /**
+   * Product Endpoints
+   */
+  PRODUCTS: {
+    // 1. GET /products (All products)
+    LIST: '/products',
+
+    // 2. GET /products/:id (Single product by ID)
+    DETAIL: (id: number | string) => `/products/${id}`,
+
+    // 3. GET /products/search?q=:query (Search products)
+    SEARCH: (query: string) => `/products/search?q=${encodeURIComponent(query)}`,
+    SEARCH_BASE: '/products/search',
+
+    // 4. GET /products?limit=:limit&skip=:skip (Pagination & filtered query builder)
+    PAGINATED: (params?: ProductQueryParams) =>
+      `/products${buildProductQueryString(params)}`,
+
+    // 5. GET /products?sortBy=:field&order=:order (Sorting products)
+    SORT: (sortBy: string, order: 'asc' | 'desc' = 'asc') =>
+      `/products?sortBy=${encodeURIComponent(sortBy)}&order=${order}`,
+
+    // 6. GET /products?select=:fields (Select specific fields, e.g. title,price)
+    SELECT: (fields: string[] | string) => {
+      const selectStr = Array.isArray(fields) ? fields.join(',') : fields;
+      return `/products?select=${encodeURIComponent(selectStr)}`;
+    },
+
+    // 7. GET /products?modifiedAfter=:isoDate (Filter by modification date)
+    MODIFIED_AFTER: (isoDate: string) =>
+      `/products?modifiedAfter=${encodeURIComponent(isoDate)}`,
+
+    // 10. GET /products/category/:category (Get products by category slug)
+    BY_CATEGORY: (category: string, params?: Omit<ProductQueryParams, 'q'>) =>
+      `/products/category/${encodeURIComponent(category)}${buildProductQueryString(params)}`,
+
+    // Mutations
+    ADD: '/products/add',
+    UPDATE: (id: number | string) => `/products/${id}`,
+    DELETE: (id: number | string) => `/products/${id}`,
+  },
+
+  /**
+   * Category Endpoints
+   */
+  CATEGORIES: {
+    // 8. GET /products/categories (Categories with names, slugs, and URLs)
+    LIST: '/products/categories',
+
+    // 9. GET /products/category-list (Category slugs array)
+    SLUG_LIST: '/products/category-list',
+
+    // 10. GET /products/category/:category (Get products by category)
+    PRODUCTS_BY_CATEGORY: (category: string, params?: Omit<ProductQueryParams, 'q'>) =>
+      `/products/category/${encodeURIComponent(category)}${buildProductQueryString(params)}`,
+  },
+
+  /**
+   * Cart Endpoints (Ready for Cart mutations and queries)
+   */
+  CARTS: {
+    LIST: '/carts',
+    DETAIL: (id: number | string) => `/carts/${id}`,
+    USER_CART: (userId: number | string) => `/carts/user/${userId}`,
+    ADD: '/carts/add',
+    UPDATE: (id: number | string) => `/carts/${id}`,
+    DELETE: (id: number | string) => `/carts/${id}`,
+  },
+} as const;
+
+export default ENDPOINTS;

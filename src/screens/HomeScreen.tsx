@@ -13,6 +13,7 @@ import { colors } from '../theme/colors';
 import { DrawerParamList, RootStackParamList } from '../navigation/types';
 import { HomeHeader } from '../components/HomeHeader';
 import { HomeSearchBar } from '../components/HomeSearchBar';
+import { CategoryList } from '../components/CategoryList';
 import { Text } from '../components/ui/Text';
 
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
@@ -22,44 +23,12 @@ export function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavProp>();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [deliveryLocation, setDeliveryLocation] = useState({
     type: 'Home',
     address: 'Bangalore, 560001',
   });
 
-  const handleAddressPress = () => {
-    Alert.alert(
-      'Select Delivery Address',
-      'Choose your preferred delivery location:',
-      [
-        {
-          text: 'Home (Bangalore, 560001)',
-          onPress: () =>
-            setDeliveryLocation({
-              type: 'Home',
-              address: 'Bangalore, 560001',
-            }),
-        },
-        {
-          text: 'Office (Indiranagar, 560038)',
-          onPress: () =>
-            setDeliveryLocation({
-              type: 'Office',
-              address: 'Indiranagar, 560038',
-            }),
-        },
-        {
-          text: 'Other (Koramangala, 560034)',
-          onPress: () =>
-            setDeliveryLocation({
-              type: 'Other',
-              address: 'Koramangala, 560034',
-            }),
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
 
   const handleNotificationsPress = () => {
     Alert.alert('Notifications', 'You have no unread notifications right now.');
@@ -80,7 +49,9 @@ export function HomeScreen() {
         locationType={deliveryLocation.type}
         addressText={deliveryLocation.address}
         hasUnreadNotifications={true}
-        onPressAddress={handleAddressPress}
+        onSelectAddress={(item) =>
+          setDeliveryLocation({ type: item.type, address: item.address })
+        }
         onPressNotifications={handleNotificationsPress}
         onPressCart={() => navigation.navigate('Cart')}
       />
@@ -129,6 +100,14 @@ export function HomeScreen() {
             Up to 50% OFF
           </Text>
         </View>
+
+        {/* Dynamic Category Slugs List */}
+        <CategoryList
+          selectedCategory={selectedCategory}
+          onSelectCategory={(slug) =>
+            setSelectedCategory((prev) => (prev === slug ? undefined : slug))
+          }
+        />
       </ScrollView>
     </View>
   );
