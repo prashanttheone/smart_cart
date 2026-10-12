@@ -1,17 +1,21 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   createBottomTabNavigator,
   BottomTabNavigationOptions,
 } from '@react-navigation/bottom-tabs';
 import {
+  LucideIcon,
   House,
   LayoutGrid,
   Heart,
   ClipboardList,
   User,
 } from 'lucide-react-native';
+
 import { colors } from '../theme/colors';
+import { fontFamilies } from '../theme/typography';
 import { BottomTabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
@@ -21,36 +25,39 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-export interface TabIconProps {
+/**
+ * Strongly-typed icon map connecting route keys to Lucide icons
+ */
+export const TAB_ICON_MAP: Record<keyof BottomTabParamList, LucideIcon> = {
+  Home: House,
+  Categories: LayoutGrid,
+  Wishlist: Heart,
+  Orders: ClipboardList,
+  Profile: User,
+};
+
+interface IconRendererProps {
   color: string;
-  size: number;
   focused: boolean;
 }
 
-const renderHomeIcon = ({ color, size, focused }: TabIconProps) => (
-  <House size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
-);
-
-const renderCategoriesIcon = ({ color, size, focused }: TabIconProps) => (
-  <LayoutGrid size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
-);
-
-const renderWishlistIcon = ({ color, size, focused }: TabIconProps) => (
-  <Heart
-    size={size}
-    color={color}
-    fill={focused ? color : 'none'}
-    strokeWidth={focused ? 2.4 : 1.8}
-  />
-);
-
-const renderOrdersIcon = ({ color, size, focused }: TabIconProps) => (
-  <ClipboardList size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
-);
-
-const renderProfileIcon = ({ color, size, focused }: TabIconProps) => (
-  <User size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
-);
+/**
+ * Factory function defined at module-level to ensure stable component references
+ * avoiding unstable nested component re-creation on render.
+ */
+const createTabIcon = (routeName: keyof BottomTabParamList) => {
+  const IconComponent = TAB_ICON_MAP[routeName];
+  return function TabBarIcon({ color, focused }: IconRendererProps) {
+    return (
+      <IconComponent
+        size={22}
+        color={color}
+        strokeWidth={focused ? 2.4 : 1.8}
+        fill={routeName === 'Wishlist' && focused ? color : 'none'}
+      />
+    );
+  };
+};
 
 /**
  * Route configuration contract for Bottom Tab Navigator
@@ -59,7 +66,7 @@ export interface TabRouteConfig<T extends keyof BottomTabParamList = keyof Botto
   name: T;
   component: React.ComponentType<any>;
   label: string;
-  icon: (props: TabIconProps) => React.ReactNode;
+  icon: (props: IconRendererProps) => React.ReactNode;
   options?: BottomTabNavigationOptions;
 }
 
@@ -71,44 +78,54 @@ export const TAB_ROUTES: ReadonlyArray<TabRouteConfig> = [
     name: 'Home',
     component: HomeScreen,
     label: 'Home',
-    icon: renderHomeIcon,
+    icon: createTabIcon('Home'),
   },
   {
     name: 'Categories',
     component: CategoriesScreen,
     label: 'Categories',
-    icon: renderCategoriesIcon,
+    icon: createTabIcon('Categories'),
   },
   {
     name: 'Wishlist',
     component: WishlistScreen,
     label: 'Wishlist',
-    icon: renderWishlistIcon,
+    icon: createTabIcon('Wishlist'),
   },
   {
     name: 'Orders',
     component: OrdersScreen,
     label: 'Orders',
-    icon: renderOrdersIcon,
+    icon: createTabIcon('Orders'),
   },
   {
     name: 'Profile',
     component: ProfileScreen,
     label: 'Profile',
-    icon: renderProfileIcon,
+    icon: createTabIcon('Profile'),
   },
 ] as const;
 
 export function TabNavigator() {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 8);
+  const tabHeight = 56 + bottomPadding;
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primaryLight,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: tabHeight,
+            paddingBottom: bottomPadding,
+          },
+        ],
         tabBarItemStyle: styles.tabBarItem,
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       {TAB_ROUTES.map((route) => (
@@ -132,16 +149,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    height: 64,
     paddingTop: 8,
-    paddingBottom: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 8,
   },
   tabBarItem: {
     paddingVertical: 2,
   },
   tabBarLabel: {
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: fontFamilies.medium,
     marginTop: 2,
   },
 });
