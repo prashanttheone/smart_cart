@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
-  AlertButton,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -100,42 +99,14 @@ export function CheckoutScreen() {
     return Math.max(0, subtotal + deliveryFee);
   }, [subtotal, deliveryFee]);
 
-  // Handle address change selection
-  const handleChangeAddress = () => {
-    const buttons: AlertButton[] = [
-      ...addresses.map((addr): AlertButton => ({
-        text: `${addr.fullName} (${addr.type})`,
-        onPress: () => {
-          dispatch(selectAddress(addr.id));
-        },
-      })),
-      { text: 'Cancel', style: 'cancel' },
-    ];
-
-    Alert.alert(
-      'Select Delivery Address',
-      'Choose an address for this order:',
-      buttons
-    );
+  // Handle address change selection from dropdown
+  const handleSelectAddress = (addr: any) => {
+    dispatch(selectAddress(addr.id));
   };
 
-  // Handle payment method change
-  const handleSelectPaymentMethod = () => {
-    const buttons: AlertButton[] = [
-      ...availablePaymentMethods.map((pm): AlertButton => ({
-        text: pm.title === 'Payment Method' ? 'All (UPI, Cards, COD)' : pm.title,
-        onPress: () => {
-          dispatch(selectPaymentMethod(pm.id));
-        },
-      })),
-      { text: 'Cancel', style: 'cancel' },
-    ];
-
-    Alert.alert(
-      'Payment Method',
-      'Choose your preferred payment method:',
-      buttons
-    );
+  // Handle payment method change from dropdown
+  const handleSelectPaymentMethod = (pm: any) => {
+    dispatch(selectPaymentMethod(pm.id));
   };
 
   // Handle placing order
@@ -196,12 +167,14 @@ export function CheckoutScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Section 1: Delivery Address */}
+          {/* Section 1: Delivery Address (with element-dropdown) */}
           <AddressSection
+            addresses={addresses}
+            selectedAddressId={selectedAddressId}
+            onSelectAddress={handleSelectAddress}
             recipientName={activeAddress.fullName}
             tag={activeAddress.type}
             addressText={activeAddress.streetAddress}
-            onChangePress={handleChangeAddress}
           />
 
           {/* Section 2: Order Items */}
@@ -215,12 +188,14 @@ export function CheckoutScreen() {
             isSelected={true}
           />
 
-          {/* Section 4: Payment Method */}
+          {/* Section 4: Payment Method (with element-dropdown) */}
           <PaymentMethodSelector
+            paymentMethods={availablePaymentMethods}
+            selectedPaymentMethodId={selectedPaymentMethodId}
+            onSelectPaymentMethod={handleSelectPaymentMethod}
             title={activePaymentMethod?.title || 'Payment Method'}
             subtitle={activePaymentMethod?.subtitle || 'UPI, cards, or Cash on Delivery'}
             actionText="Select"
-            onSelectPress={handleSelectPaymentMethod}
           />
 
           {/* Section 5: Price Details */}
