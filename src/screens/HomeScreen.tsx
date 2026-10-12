@@ -1,63 +1,135 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
-import { Menu, Search, ShoppingBag } from 'lucide-react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { colors } from '../theme/colors';
 import { DrawerParamList, RootStackParamList } from '../navigation/types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { HomeHeader } from '../components/HomeHeader';
+import { HomeSearchBar } from '../components/HomeSearchBar';
+import { Text } from '../components/ui/Text';
 
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
   NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavProp>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [deliveryLocation, setDeliveryLocation] = useState({
+    type: 'Home',
+    address: 'Bangalore, 560001',
+  });
+
+  const handleAddressPress = () => {
+    Alert.alert(
+      'Select Delivery Address',
+      'Choose your preferred delivery location:',
+      [
+        {
+          text: 'Home (Bangalore, 560001)',
+          onPress: () =>
+            setDeliveryLocation({
+              type: 'Home',
+              address: 'Bangalore, 560001',
+            }),
+        },
+        {
+          text: 'Office (Indiranagar, 560038)',
+          onPress: () =>
+            setDeliveryLocation({
+              type: 'Office',
+              address: 'Indiranagar, 560038',
+            }),
+        },
+        {
+          text: 'Other (Koramangala, 560034)',
+          onPress: () =>
+            setDeliveryLocation({
+              type: 'Other',
+              address: 'Koramangala, 560034',
+            }),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleNotificationsPress = () => {
+    Alert.alert('Notifications', 'You have no unread notifications right now.');
+  };
+
+  const handleScanPress = () => {
+    Alert.alert('Barcode & QR Scanner', 'Ready to scan product barcode.');
+  };
+
+  const handleFilterPress = () => {
+    Alert.alert('Filters', 'Open filter sheet / drawer.');
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header bar */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => navigation.openDrawer()}
-          activeOpacity={0.7}
-        >
-          <Menu size={22} color={colors.textPrimary} strokeWidth={2} />
-        </TouchableOpacity>
+      {/* HomeHeader with SmartCart logo, delivery address, notifications, and cart badge */}
+      <HomeHeader
+        locationType={deliveryLocation.type}
+        addressText={deliveryLocation.address}
+        hasUnreadNotifications={true}
+        onPressAddress={handleAddressPress}
+        onPressNotifications={handleNotificationsPress}
+        onPressCart={() => navigation.navigate('Cart')}
+      />
 
-        <Text style={styles.brandTitle}>
-          Smart<Text style={styles.brandAccent}>Cart</Text>
-        </Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
+        <View style={styles.searchContainer}>
+          <HomeSearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onDebouncedSearch={(q) => {
+              setDebouncedQuery(q);
+            }}
+            onClear={() => {
+              setSearchQuery('');
+              setDebouncedQuery('');
+            }}
+            rightActionType="scan"
+            onPressScan={handleScanPress}
+            onPressFilter={handleFilterPress}
+          />
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => navigation.navigate('Cart')}
-          activeOpacity={0.7}
-        >
-          <ShoppingBag size={22} color={colors.textPrimary} strokeWidth={2} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Clean content body */}
-      <View style={styles.content}>
-        <View style={styles.searchBar}>
-          <Search size={18} color={colors.textMuted} strokeWidth={2} />
-          <Text style={styles.searchPlaceholder}>Search products, brands, categories...</Text>
+          {debouncedQuery.length > 0 && (
+            <View style={styles.searchActivePill}>
+              <Text variant="caption" color="primaryLight">
+                Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
+              </Text>
+            </View>
+          )}
         </View>
 
-        <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeSubtitle}>READY FOR YOUR DATA</Text>
-          <Text style={styles.welcomeTitle}>Welcome to SmartCart</Text>
-          <Text style={styles.welcomeDescription}>
-            Home screen is clean and ready. Connect your endpoints and custom components here.
+        {/* Demo banner showcasing Poppins typography */}
+        <View style={styles.bannerCard}>
+          <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
+            SPECIAL OFFER
+          </Text>
+          <Text variant="h2" style={styles.bannerTitle}>
+            Big Deals Everyday
+          </Text>
+          <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
+            Up to 50% OFF
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -67,75 +139,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surfaceVariant,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 0.5,
-  },
-  brandAccent: {
-    color: colors.secondary,
-  },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 16,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 16,
   },
-  searchPlaceholder: {
-    marginLeft: 10,
-    fontSize: 14,
-    color: colors.textMuted,
+  searchActivePill: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: colors.primarySoft,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
-  welcomeCard: {
+  bannerCard: {
+    margin: 16,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: colors.primary,
+    backgroundColor: '#0755E8',
+    shadowColor: '#0755E8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  welcomeSubtitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#93c5fd',
+  bannerTag: {
+    color: '#93C5FD',
     letterSpacing: 1,
     marginBottom: 6,
   },
-  welcomeTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+  bannerTitle: {
     color: colors.textInverse,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  welcomeDescription: {
-    fontSize: 13,
-    color: '#dbeafe',
-    lineHeight: 18,
+  bannerSubtitle: {
+    color: '#FDE047',
   },
 });
 
