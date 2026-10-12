@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ViewStyle,
   StyleProp,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -180,10 +181,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     <View
       style={[
         styles.container,
-        useSafeArea && { paddingTop: Math.max(insets.top, 8) + 4 },
+        useSafeArea && { paddingTop: insets.top + 30 },
         style,
       ]}
     >
+      <StatusBar barStyle="dark-content" />
       {/* Top Row: Logo + Action Buttons */}
       <View style={styles.topRow}>
         <View style={styles.logoContainer}>
@@ -343,11 +345,17 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#f1f5f9', // Pale shadow grey for notch, battery & network readability
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#e2e8f0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+    zIndex: 10,
   },
   topRow: {
     flexDirection: 'row',
@@ -384,7 +392,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionButton: {
-    backgroundColor: colors.surfaceVariant,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

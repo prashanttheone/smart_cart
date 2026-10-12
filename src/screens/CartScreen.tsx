@@ -6,9 +6,12 @@ import {
   Text,
   TouchableOpacity,
   View,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowLeft } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { useAppDispatch, useAppSelector } from '../store';
 import {
@@ -20,6 +23,7 @@ import {
 import { RootStackParamList } from '../navigation/types';
 
 export function CartScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
   const { items, totalAmount, totalCount } = useAppSelector((state) => state.cart);
@@ -99,10 +103,29 @@ export function CartScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Top Safe Area Notch Header with Pale Shadow Grey */}
+      <View style={[styles.header, { paddingTop: insets.top + 30 }]}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Shopping Cart</Text>
+        </View>
+
         {items.length > 0 && (
-          <TouchableOpacity onPress={() => dispatch(clearCart())}>
+          <TouchableOpacity
+            onPress={() => dispatch(clearCart())}
+            style={styles.clearBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Text style={styles.clearText}>Clear All</Text>
           </TouchableOpacity>
         )}
@@ -153,18 +176,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: colors.surface,
+    paddingBottom: 14,
+    backgroundColor: '#f1f5f9', // Pale shadow grey for notch, battery & network readability
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#e2e8f0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+    zIndex: 10,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  clearBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
   clearText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.danger,
     fontWeight: '600',
   },

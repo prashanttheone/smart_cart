@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Platform,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -159,8 +159,10 @@ export function CategoryProductsScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
       {/* Sticky Top Header with Back Button, Search Bar, and Cart Button */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 30 }]}>
         <View style={styles.headerRow}>
           {/* Back Button */}
           <TouchableOpacity
@@ -177,7 +179,7 @@ export function CategoryProductsScreen() {
           <View style={styles.headerSearchWrapper}>
             <Search
               size={18}
-              color={colors.textMuted}
+              color={colors.textSecondary}
               strokeWidth={2}
               style={styles.searchIcon}
             />
@@ -185,6 +187,11 @@ export function CategoryProductsScreen() {
               style={styles.headerSearchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              onSubmitEditing={() => {
+                if (searchQuery.trim()) {
+                  navigation.navigate('Search', { initialQuery: searchQuery.trim() });
+                }
+              }}
               placeholder={`Search in ${formatCategoryName(selectedCategory)}...`}
               placeholderTextColor={colors.textMuted}
               returnKeyType="search"
@@ -240,16 +247,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerContainer: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#f1f5f9', // Faded shadow grey for notch & status bar readability
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 3,
+    borderBottomColor: '#e2e8f0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
     zIndex: 10,
   },
   headerRow: {
@@ -258,31 +265,35 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     position: 'relative',
   },
   headerSearchWrapper: {
     flex: 1,
-    height: 40,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
     paddingHorizontal: 12,
   },
   searchIcon: {
-    marginRight: 6,
+    marginRight: 8,
   },
   headerSearchInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
-    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+    paddingVertical: 0,
   },
   searchClearBtn: {
     padding: 4,

@@ -57,15 +57,14 @@ export const STACK_ROUTES: ReadonlyArray<StackRouteConfig> = [
     name: 'Cart',
     component: CartScreen,
     options: {
-      title: 'Shopping Cart',
-      headerBackTitle: 'Back',
+      headerShown: false,
     },
   },
   {
     name: 'Checkout',
     component: CheckoutScreen,
     options: {
-      title: 'Order Checkout',
+      headerShown: false,
       presentation: 'modal',
     },
   },

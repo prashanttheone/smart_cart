@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowLeft } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../store';
 import { clearCart } from '../store/slices/cartSlice';
 import { selectAddress } from '../store/slices/addressSlice';
@@ -29,6 +31,7 @@ import {
 import { colors } from '../theme/colors';
 
 export function CheckoutScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
 
@@ -139,7 +142,31 @@ export function CheckoutScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
+
+      {/* Top Safe Area Notch Bar with Pale Shadow Grey Header */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 30 }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleCol}>
+            <Text style={styles.headerTitle}>Order Checkout</Text>
+            {cartItems.length > 0 && (
+              <Text style={styles.headerSubtitle}>
+                {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} • ${totalPayable.toFixed(2)}
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+
       {/* Blue Banner Header */}
       <CheckoutHeader message="Review your order before payment" />
 
@@ -224,6 +251,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
+  },
+  headerContainer: {
+    backgroundColor: '#f1f5f9', // Pale shadow grey for notch, battery & network readability
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  headerTitleCol: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
+    marginTop: 1,
   },
   scroll: {
     flex: 1,

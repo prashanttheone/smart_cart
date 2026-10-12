@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
@@ -105,6 +106,7 @@ export function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       {/* HomeHeader with SmartCart logo, delivery address, notifications, and cart badge */}
       <HomeHeader
         locationType={deliveryLocation.type}
