@@ -87,9 +87,10 @@ export function HomeScreen() {
       {/* Dynamic Category Slugs List */}
       <CategoryList
         selectedCategory={selectedCategory}
-        onSelectCategory={(slug) =>
-          setSelectedCategory((prev) => (prev === slug ? undefined : slug))
-        }
+        onSelectCategory={(slug) => {
+          setSelectedCategory(slug);
+          navigation.navigate('CategoryProducts', { category: slug });
+        }}
       />
 
       {/* Deals of the Day Section */}

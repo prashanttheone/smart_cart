@@ -5,7 +5,7 @@ import { DrawerScreenProps } from '@react-navigation/drawer';
 
 export type BottomTabParamList = {
   Home: undefined;
-  Categories: undefined;
+  Categories: { category?: string } | undefined;
   Wishlist: undefined;
   Orders: undefined;
   Profile: undefined;
@@ -21,6 +21,7 @@ import { Product } from '../services/query/productQueries';
 
 export type RootStackParamList = {
   DrawerRoot: NavigatorScreenParams<DrawerParamList>;
+  CategoryProducts: { category?: string; categoryName?: string };
   ProductDetails: { product?: Product; productId?: number };
   Cart: undefined;
   Checkout: undefined;

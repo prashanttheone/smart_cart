@@ -1,6 +1,9 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  createBottomTabNavigator,
+  BottomTabNavigationOptions,
+} from '@react-navigation/bottom-tabs';
 import {
   House,
   LayoutGrid,
@@ -18,47 +21,21 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-const renderHomeIcon = ({
-  color,
-  size,
-  focused,
-}: {
+export interface TabIconProps {
   color: string;
   size: number;
   focused: boolean;
-}) => (
-  <House
-    size={size}
-    color={color}
-    strokeWidth={focused ? 2.4 : 1.8}
-  />
+}
+
+const renderHomeIcon = ({ color, size, focused }: TabIconProps) => (
+  <House size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
 );
 
-const renderCategoriesIcon = ({
-  color,
-  size,
-  focused,
-}: {
-  color: string;
-  size: number;
-  focused: boolean;
-}) => (
-  <LayoutGrid
-    size={size}
-    color={color}
-    strokeWidth={focused ? 2.4 : 1.8}
-  />
+const renderCategoriesIcon = ({ color, size, focused }: TabIconProps) => (
+  <LayoutGrid size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
 );
 
-const renderWishlistIcon = ({
-  color,
-  size,
-  focused,
-}: {
-  color: string;
-  size: number;
-  focused: boolean;
-}) => (
+const renderWishlistIcon = ({ color, size, focused }: TabIconProps) => (
   <Heart
     size={size}
     color={color}
@@ -67,37 +44,60 @@ const renderWishlistIcon = ({
   />
 );
 
-const renderOrdersIcon = ({
-  color,
-  size,
-  focused,
-}: {
-  color: string;
-  size: number;
-  focused: boolean;
-}) => (
-  <ClipboardList
-    size={size}
-    color={color}
-    strokeWidth={focused ? 2.4 : 1.8}
-  />
+const renderOrdersIcon = ({ color, size, focused }: TabIconProps) => (
+  <ClipboardList size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
 );
 
-const renderProfileIcon = ({
-  color,
-  size,
-  focused,
-}: {
-  color: string;
-  size: number;
-  focused: boolean;
-}) => (
-  <User
-    size={size}
-    color={color}
-    strokeWidth={focused ? 2.4 : 1.8}
-  />
+const renderProfileIcon = ({ color, size, focused }: TabIconProps) => (
+  <User size={size} color={color} strokeWidth={focused ? 2.4 : 1.8} />
 );
+
+/**
+ * Route configuration contract for Bottom Tab Navigator
+ */
+export interface TabRouteConfig<T extends keyof BottomTabParamList = keyof BottomTabParamList> {
+  name: T;
+  component: React.ComponentType<any>;
+  label: string;
+  icon: (props: TabIconProps) => React.ReactNode;
+  options?: BottomTabNavigationOptions;
+}
+
+/**
+ * Declarative array list of bottom tab screens
+ */
+export const TAB_ROUTES: ReadonlyArray<TabRouteConfig> = [
+  {
+    name: 'Home',
+    component: HomeScreen,
+    label: 'Home',
+    icon: renderHomeIcon,
+  },
+  {
+    name: 'Categories',
+    component: CategoriesScreen,
+    label: 'Categories',
+    icon: renderCategoriesIcon,
+  },
+  {
+    name: 'Wishlist',
+    component: WishlistScreen,
+    label: 'Wishlist',
+    icon: renderWishlistIcon,
+  },
+  {
+    name: 'Orders',
+    component: OrdersScreen,
+    label: 'Orders',
+    icon: renderOrdersIcon,
+  },
+  {
+    name: 'Profile',
+    component: ProfileScreen,
+    label: 'Profile',
+    icon: renderProfileIcon,
+  },
+] as const;
 
 export function TabNavigator() {
   return (
@@ -111,46 +111,18 @@ export function TabNavigator() {
         tabBarItemStyle: styles.tabBarItem,
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: renderHomeIcon,
-        }}
-      />
-      <Tab.Screen
-        name="Categories"
-        component={CategoriesScreen}
-        options={{
-          tabBarLabel: 'Categories',
-          tabBarIcon: renderCategoriesIcon,
-        }}
-      />
-      <Tab.Screen
-        name="Wishlist"
-        component={WishlistScreen}
-        options={{
-          tabBarLabel: 'Wishlist',
-          tabBarIcon: renderWishlistIcon,
-        }}
-      />
-      <Tab.Screen
-        name="Orders"
-        component={OrdersScreen}
-        options={{
-          tabBarLabel: 'Orders',
-          tabBarIcon: renderOrdersIcon,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: renderProfileIcon,
-        }}
-      />
+      {TAB_ROUTES.map((route) => (
+        <Tab.Screen
+          key={route.name}
+          name={route.name}
+          component={route.component}
+          options={{
+            tabBarLabel: route.label,
+            tabBarIcon: route.icon,
+            ...route.options,
+          }}
+        />
+      ))}
     </Tab.Navigator>
   );
 }
