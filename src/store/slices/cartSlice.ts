@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { appStorage, STORAGE_KEYS } from '../../services/storage/asyncStorage';
 
 export interface CartItem {
   id: number;
@@ -12,13 +13,26 @@ export interface CartState {
   items: CartItem[];
   totalAmount: number;
   totalCount: number;
+  isLoaded: boolean;
 }
 
 const initialState: CartState = {
   items: [],
   totalAmount: 0,
   totalCount: 0,
+  isLoaded: false,
 };
+
+/**
+ * Async thunk to hydrate cart items from AsyncStorage
+ */
+export const loadCart = createAsyncThunk(
+  'cart/loadCart',
+  async () => {
+    const stored = await appStorage.getItem<CartItem[]>(STORAGE_KEYS.CART);
+    return stored || [];
+  }
+);
 
 function calculateTotals(items: CartItem[]) {
   const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -86,6 +100,15 @@ export const cartSlice = createSlice({
       state.totalCount = 0;
       state.totalAmount = 0;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(loadCart.fulfilled, (state, action) => {
+      state.items = action.payload;
+      const totals = calculateTotals(state.items);
+      state.totalCount = totals.totalCount;
+      state.totalAmount = totals.totalAmount;
+      state.isLoaded = true;
+    });
   },
 });
 

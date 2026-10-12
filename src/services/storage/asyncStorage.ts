@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: '@smartcart/auth_token',
   USER_DATA: '@smartcart/user_data',
   CART: '@smartcart/cart_items',
+  WISHLIST: '@smartcart/wishlist_items',
   THEME_MODE: '@smartcart/theme_mode',
   RECENT_SEARCHES: '@smartcart/recent_searches',
 } as const;

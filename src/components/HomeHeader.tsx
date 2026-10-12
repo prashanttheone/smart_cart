@@ -181,7 +181,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     <View
       style={[
         styles.container,
-        useSafeArea && { paddingTop: insets.top + 30 },
+        useSafeArea && { paddingTop: insets.top },
         style,
       ]}
     >
