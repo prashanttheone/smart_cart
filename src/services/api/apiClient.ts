@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { appStorage, STORAGE_KEYS } from '../storage/asyncStorage';
+import { keychainStorage } from '../storage/keychainStorage';
 
 const BASE_URL = 'https://dummyjson.com'; // Standard e-commerce mock API for testing & demo
 
@@ -16,12 +16,12 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const token = await appStorage.getItem<string>(STORAGE_KEYS.AUTH_TOKEN);
+      const token = await keychainStorage.getToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (e) {
-      console.warn('[API Client] Could not read auth token from storage:', e);
+      console.warn('[API Client] Could not read auth token from keychain:', e);
     }
     return config;
   },

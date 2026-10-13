@@ -8,18 +8,16 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { useToastModal } from '../components/ui';
-import { useAppDispatch, useAppSelector } from '../store';
-import { logout } from '../store/slices/authSlice';
-import { appStorage, STORAGE_KEYS } from '../services/storage/asyncStorage';
+import { useAuth } from '../services/auth';
+import { appStorage } from '../services/storage/asyncStorage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
 export function ProfileScreen() {
-  const dispatch = useAppDispatch();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { showToast, showConfirm } = useToastModal();
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, logout: authLogout } = useAuth();
   const [note, setNote] = useState('');
   const [savedNote, setSavedNote] = useState<string | null>(null);
 
@@ -136,8 +134,7 @@ export function ProfileScreen() {
           <TouchableOpacity
             style={styles.logoutBtn}
             onPress={async () => {
-              await appStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-              dispatch(logout());
+              await authLogout();
               showToast({
                 type: 'info',
                 title: 'Logged Out',
@@ -151,16 +148,16 @@ export function ProfileScreen() {
           <View style={styles.authButtonsStack}>
             <TouchableOpacity
               style={styles.loginBtn}
-              onPress={() => navigation.navigate('Login')}
+              onPress={() => navigation.navigate('Auth', { initialMode: 'login' })}
             >
-              <Text style={styles.loginBtnText}>Sign In (Email & Password)</Text>
+              <Text style={styles.loginBtnText}>Sign In</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.registerBtn}
-              onPress={() => navigation.navigate('Register')}
+              onPress={() => navigation.navigate('Auth', { initialMode: 'register' })}
             >
-              <Text style={styles.registerBtnText}>Create Account (Multi-Step)</Text>
+              <Text style={styles.registerBtnText}>Create Account</Text>
             </TouchableOpacity>
           </View>
         )}

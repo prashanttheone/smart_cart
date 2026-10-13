@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Lock, ArrowRight } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../store';
 import { clearCart } from '../store/slices/cartSlice';
 import { selectAddress } from '../store/slices/addressSlice';
@@ -18,6 +18,7 @@ import { selectPaymentMethod } from '../store/slices/checkoutSlice';
 import { placeOrder } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
 import { useToastModal } from '../components/ui';
+import { useAuth } from '../services/auth';
 import {
   CheckoutHeader,
   AddressSection,
@@ -35,6 +36,7 @@ export function CheckoutScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
   const { showAlert, showConfirm } = useToastModal();
+  const { isAuthenticated, user } = useAuth();
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -55,12 +57,12 @@ export function CheckoutScreen() {
     return (
       addresses.find((a) => a.id === selectedAddressId) ||
       addresses[0] || {
-        fullName: 'Prashant Kumar',
+        fullName: user?.name || 'Prashant Kumar',
         type: 'Home' as const,
         streetAddress: 'Your saved delivery address goes here',
       }
     );
-  }, [addresses, selectedAddressId]);
+  }, [addresses, selectedAddressId, user]);
 
   // Active delivery & payment methods
   const activeDeliveryMethod = useMemo(() => {
@@ -172,7 +174,37 @@ export function CheckoutScreen() {
       {/* Blue Banner Header */}
       <CheckoutHeader message="Review your order before payment" />
 
-      {cartItems.length === 0 ? (
+      {!isAuthenticated ? (
+        <View style={styles.authBarrierContainer}>
+          <View style={styles.lockBadge}>
+            <Lock size={36} color={colors.primary} strokeWidth={2.2} />
+          </View>
+          <Text style={styles.authBarrierTitle}>Sign In to Complete Checkout</Text>
+          <Text style={styles.authBarrierSubtitle}>
+            To protect your purchase, delivery address, and payment information, please sign in or create an account before checking out.
+          </Text>
+
+          <View style={styles.orderPreviewCard}>
+            <View style={styles.orderPreviewRow}>
+              <Text style={styles.orderPreviewLabel}>Items in Cart:</Text>
+              <Text style={styles.orderPreviewValue}>{cartItems.length} items</Text>
+            </View>
+            <View style={styles.orderPreviewRow}>
+              <Text style={styles.orderPreviewLabel}>Total Payable:</Text>
+              <Text style={styles.orderPreviewTotal}>${totalPayable.toFixed(2)}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('Auth', { initialMode: 'login' })}
+            style={styles.authBtn}
+          >
+            <Text style={styles.authBtnText}>Sign In or Register</Text>
+            <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
+      ) : cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🛒</Text>
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
@@ -337,6 +369,87 @@ const styles = StyleSheet.create({
     color: colors.textInverse,
     fontSize: 15,
     fontWeight: '700',
+  },
+  authBarrierContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: colors.surface,
+  },
+  lockBadge: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+  },
+  authBarrierTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  authBarrierSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  orderPreviewCard: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 24,
+    gap: 10,
+  },
+  orderPreviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderPreviewLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  orderPreviewValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  orderPreviewTotal: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  authBtn: {
+    width: '100%',
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  authBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 8,
   },
 });
 

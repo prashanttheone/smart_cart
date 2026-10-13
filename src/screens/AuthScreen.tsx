@@ -33,23 +33,26 @@ export function AuthScreen({ initialMode: propInitialMode }: AuthScreenProps) {
   // 0 = login, 1 = register
   const slideAnim = useRef(new Animated.Value(defaultMode === 'login' ? 0 : 1)).current;
 
+  const switchMode = React.useCallback(
+    (newMode: 'login' | 'register') => {
+      if (newMode === mode) return;
+      setMode(newMode);
+      Animated.spring(slideAnim, {
+        toValue: newMode === 'login' ? 0 : 1,
+        friction: 9,
+        tension: 65,
+        useNativeDriver: true,
+      }).start();
+    },
+    [mode, slideAnim]
+  );
+
   useEffect(() => {
     const target = route.params?.initialMode;
     if (target && target !== mode) {
       switchMode(target);
     }
-  }, [route.params?.initialMode]);
-
-  const switchMode = (newMode: 'login' | 'register') => {
-    if (newMode === mode) return;
-    setMode(newMode);
-    Animated.spring(slideAnim, {
-      toValue: newMode === 'login' ? 0 : 1,
-      friction: 9,
-      tension: 65,
-      useNativeDriver: true,
-    }).start();
-  };
+  }, [route.params?.initialMode, mode, switchMode]);
 
   const handleSuccess = () => {
     if (navigation.canGoBack()) {

@@ -21,11 +21,15 @@ import {
   updateQuantity,
 } from '../store/slices/cartSlice';
 import { RootStackParamList } from '../navigation/types';
+import { useAuth } from '../services/auth';
+import { useToastModal } from '../components/ui';
 
 export function CartScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useToastModal();
   const { items, totalAmount, totalCount } = useAppSelector((state) => state.cart);
 
   const handleProductPress = (item: CartItem) => {
@@ -154,7 +158,18 @@ export function CartScreen() {
             </View>
             <TouchableOpacity
               style={styles.checkoutBtn}
-              onPress={() => navigation.navigate('Checkout')}
+              onPress={() => {
+                if (!isAuthenticated) {
+                  showToast({
+                    type: 'info',
+                    title: 'Sign In Required',
+                    message: 'Please sign in or create an account to proceed with checkout.',
+                  });
+                  navigation.navigate('Auth', { initialMode: 'login' });
+                  return;
+                }
+                navigation.navigate('Checkout');
+              }}
               activeOpacity={0.8}
             >
               <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>

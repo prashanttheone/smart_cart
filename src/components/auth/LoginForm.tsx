@@ -10,11 +10,7 @@ import { colors } from '../../theme/colors';
 import { Text } from '../ui/Text';
 import { Input, InputRef } from '../ui/Input';
 import { useToastModal } from '../ui/ToastModalContext';
-import { api } from '../../services/api/apiClient';
-import { appStorage, STORAGE_KEYS } from '../../services/storage/asyncStorage';
-import { useAppDispatch } from '../../store';
-import { setUser, setToken } from '../../store/slices/authSlice';
-import { ENDPOINTS } from '../../app/lib/EndPoint';
+import { useAuth } from '../../services/auth';
 
 export interface LoginFormProps {
   onSuccess?: () => void;
@@ -25,7 +21,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onSuccess,
   onSwitchToRegister,
 }) => {
-  const dispatch = useAppDispatch();
+  const { login } = useAuth();
   const { showToast, showAlert } = useToastModal();
 
   const passwordRef = useRef<InputRef>(null);
@@ -68,50 +64,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
     setIsLoading(true);
     try {
-      const loginUrl = ENDPOINTS.AUTH.buildUrl(ENDPOINTS.AUTH.LOGIN);
-      const res = await api.post<{
-        message?: string;
-        userId: string;
-        email: string;
-        full_name?: string;
-        token: string;
-      }>(loginUrl, {
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      if (res && res.token) {
-        await appStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, res.token);
-        dispatch(
-          setUser({
-            id: res.userId,
-            email: res.email,
-            name: res.full_name || res.email.split('@')[0],
-          })
-        );
-        dispatch(setToken(res.token));
-
+      const result = await login(email, password);
+      if (result.success) {
         showToast({
           type: 'success',
           title: 'Welcome back! 👋',
-          message: `Signed in as ${res.full_name || res.email}`,
+          message: 'Signed in successfully to SmartCart',
         });
 
         if (onSuccess) {
           onSuccess();
         }
+      } else {
+        showAlert({
+          type: 'error',
+          title: 'Sign In Failed',
+          message: result.message || 'Unable to sign in. Please verify your credentials.',
+        });
       }
-    } catch (err: any) {
-      const serverMessage =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        'Unable to sign in. Please verify your email and password.';
-
-      showAlert({
-        type: 'error',
-        title: 'Sign In Failed',
-        message: serverMessage,
-      });
     } finally {
       setIsLoading(false);
     }

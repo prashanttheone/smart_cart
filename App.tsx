@@ -9,6 +9,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { store } from './src/store';
 import { queryClient } from './src/services/query/queryClient';
 import { ToastModalProvider } from './src/components/ui';
+import { AuthProvider } from './src/services/auth';
 import RootStackNavigator from './src/navigation/RootStackNavigator';
 
 function App(): React.JSX.Element {
@@ -20,10 +21,12 @@ function App(): React.JSX.Element {
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
             <ToastModalProvider>
-              <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-              <NavigationContainer>
-                <RootStackNavigator />
-              </NavigationContainer>
+              <AuthProvider>
+                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+                <NavigationContainer>
+                  <RootStackNavigator />
+                </NavigationContainer>
+              </AuthProvider>
             </ToastModalProvider>
           </QueryClientProvider>
         </Provider>

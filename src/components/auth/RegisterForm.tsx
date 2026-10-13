@@ -17,11 +17,7 @@ import { colors } from '../../theme/colors';
 import { Text } from '../ui/Text';
 import { Input, InputRef } from '../ui/Input';
 import { useToastModal } from '../ui/ToastModalContext';
-import { api } from '../../services/api/apiClient';
-import { appStorage, STORAGE_KEYS } from '../../services/storage/asyncStorage';
-import { useAppDispatch } from '../../store';
-import { setUser, setToken } from '../../store/slices/authSlice';
-import { ENDPOINTS } from '../../app/lib/EndPoint';
+import { useAuth } from '../../services/auth';
 
 export interface RegisterFormProps {
   onSuccess?: () => void;
@@ -32,7 +28,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   onSuccess,
   onSwitchToLogin,
 }) => {
-  const dispatch = useAppDispatch();
+  const { register } = useAuth();
   const { showToast, showAlert } = useToastModal();
 
   const emailRef = useRef<InputRef>(null);
@@ -119,53 +115,30 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
     setIsLoading(true);
     try {
-      const registerUrl = ENDPOINTS.AUTH.buildUrl(ENDPOINTS.AUTH.REGISTER);
-      const res = await api.post<{
-        message?: string;
-        userId: string;
-        email: string;
-        full_name?: string;
-        token: string;
-      }>(registerUrl, {
-        full_name: fullName.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim(),
+      const result = await register({
+        fullName,
+        email,
+        phone,
         password,
-        is_recruiter: false, // Default shopper account
       });
 
-      if (res && res.token) {
-        await appStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, res.token);
-        dispatch(
-          setUser({
-            id: res.userId,
-            email: res.email,
-            name: res.full_name || fullName.trim(),
-          })
-        );
-        dispatch(setToken(res.token));
-
+      if (result.success) {
         showToast({
           type: 'success',
           title: 'Account Created! 🎉',
-          message: `Welcome to SmartCart, ${res.full_name || fullName}!`,
+          message: `Welcome to SmartCart, ${fullName.trim()}!`,
         });
 
         if (onSuccess) {
           onSuccess();
         }
+      } else {
+        showAlert({
+          type: 'error',
+          title: 'Registration Failed',
+          message: result.message || 'Unable to create account. Please check your details and try again.',
+        });
       }
-    } catch (err: any) {
-      const serverMessage =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        'Unable to create account. Please check your details and try again.';
-
-      showAlert({
-        type: 'error',
-        title: 'Registration Failed',
-        message: serverMessage,
-      });
     } finally {
       setIsLoading(false);
     }

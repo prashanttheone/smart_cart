@@ -13,6 +13,7 @@ import CheckoutScreen from '../screens/CheckoutScreen';
 import SearchScreen from '../screens/SearchScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import AuthScreen from '../screens/AuthScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -76,6 +77,13 @@ export const STACK_ROUTES: ReadonlyArray<StackRouteConfig> = [
     options: {
       headerShown: false,
       animation: 'fade',
+    },
+  },
+  {
+    name: 'Auth',
+    component: AuthScreen,
+    options: {
+      headerShown: false,
     },
   },
   {

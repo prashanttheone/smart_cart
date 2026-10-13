@@ -4,7 +4,6 @@
  * 2. Custom Backend Server (Auth & Orders): http://localhost:3005 (or 10.0.2.2:3005 on Android)
  */
 
-import { Platform } from 'react-native';
 
 /**
  * Base URL for DummyJSON public catalog
@@ -18,11 +17,7 @@ export const BASE_URL = DUMMY_JSON_BASE_URL; // Alias for backward compatibility
  * Android Emulator connects to host machine via 10.0.2.2
  * iOS Simulator and Web connect via localhost
  */
-export const SERVER_PORT = 3005;
-export const SERVER_BASE_URL =
-  Platform.OS === 'android'
-    ? `http://10.0.2.2:${SERVER_PORT}`
-    : `http://localhost:${SERVER_PORT}`;
+export const SERVER_BASE_URL = 'https://acrapathapi.schooldb.in';
 export const API_BASE_URL = SERVER_BASE_URL;
 
 // ==========================================
