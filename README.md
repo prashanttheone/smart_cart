@@ -1,97 +1,199 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🛒 SmartCart — Modern React Native E-Commerce App
 
-# Getting Started
+SmartCart is a feature-packed, high-performance mobile e-commerce application built with **React Native (0.87)**, **TypeScript**, **Redux Toolkit**, and **TanStack Query**. It combines a rich product catalog with a hybrid dual-backend architecture, secure keychain authentication, native Firebase push notifications, and analytics tracking.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 📱 Features & Functionality
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### 🛍️ Product Catalog & Discovery
+- **Extensive Catalog**: Explore products across multiple categories powered by the [DummyJSON API](https://dummyjson.com).
+- **Deals of the Day**: Dedicated home screen section showcasing top-discounted products with real-time percentage badges.
+- **Category Browsing**: Visual category grid and horizontal scroll bars with instant category-filtered product listings.
+- **Search & Filter**: Real-time product search with query debouncing, sorting (price, discount, rating), and pagination.
+- **Product Details Screen**: High-res image carousel, price breakdowns, stock counters, star ratings, customer reviews, and specifications.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### 🛒 Cart & Wishlist Management
+- **Interactive Cart**: Increment/decrement item counts, delete items, and view live order summaries (subtotal, shipping, discounts, tax, and final amount).
+- **Persistent Wishlist**: 1-tap heart toggle across product cards and detail pages to save items for later.
+- **Instant Badge Badging**: Real-time cart count badges in bottom navigation tabs and home header.
 
-```sh
-# Using npm
+### 💳 Checkout & Order Processing
+- **Streamlined Checkout Flow**: Multi-step checkout covering shipping address, delivery options, and payment methods (Card, UPI, Net Banking, COD).
+- **Order Placement**: Sends order payloads directly to the backend order processing service.
+- **Order History & Tracking**: Authenticated order history dashboard displaying past orders, delivery status badges, tracking timestamps, and item receipts.
+- **Protected State UI**: Clean, secure auth prompt when unauthenticated users access their orders.
+
+### 🔐 Authentication & Security
+- **Hybrid Backend Auth**: Secure registration and login connected to the custom backend API (`https://acrapathapi.schooldb.in`).
+- **Encrypted Keychain Storage**: JWT tokens stored securely via `react-native-keychain` (with transparent `AsyncStorage` fallback for unsupported environments).
+- **Persistent Sessions**: Automatic token restoration on app launch with session expiry handling.
+- **Device & Platform Fingerprinting**: Device telemetry and OS version metadata attached to authentication handshakes.
+
+### 🔔 Push Notifications & Analytics
+- **Firebase Cloud Messaging (FCM)**: Remote push notification service integration.
+- **Native Heads-Up Banners**: Powered by `@notifee/react-native` to display native Android & iOS push notification banners in foreground, background, and quit states.
+- **Notification Channels**: Pre-configured high-importance Android channels (`smartcart_default_channel`, `smartcart_orders_channel`).
+- **FCM Token Syncing**: Automatic token registration, refresh listeners, and backend token synchronization (`/api/auth/fcm-token`).
+- **Firebase Analytics**: Automatic screen view logging via React Navigation and custom event tracking (e.g., checkout, login, sign-up).
+
+### 🎨 Design System & UI/UX
+- **Custom UI Component Library**: Centralized `Text`, `Button`, `ToastModal`, `ProductCard`, and `CategoryList` components.
+- **Interactive Modals & Toasts**: Animated confirmation dialogs and alert banners with customizable icons and button variants.
+- **Micro-Animations**: Smooth layout transitions driven by `react-native-reanimated` and gesture handling via `react-native-gesture-handler`.
+- **Lucide Icons**: Crisp, vector iconography with `lucide-react-native`.
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+| Layer | Technologies |
+|---|---|
+| **Core Framework** | React Native `0.87.1`, React `19.2.3` |
+| **Language** | TypeScript `6.0` |
+| **State Management** | Redux Toolkit (`@reduxjs/toolkit` `2.13`), React-Redux `9.3` |
+| **Server State & Caching** | TanStack Query (`@tanstack/react-query` `5.104`) |
+| **Navigation** | React Navigation `7.x` (Native Stack, Bottom Tabs, Drawer) |
+| **Networking** | Axios `1.20` with centralized interceptors & endpoints |
+| **Secure Storage** | `react-native-keychain` `10.0` & `@react-native-async-storage/async-storage` `3.1` |
+| **Push Notifications** | `@react-native-firebase/messaging` `26.4` & `@notifee/react-native` `9.1` |
+| **Analytics** | `@react-native-firebase/analytics` `26.4` |
+| **Animations & Gestures**| `react-native-reanimated` `4.7`, `react-native-gesture-handler` `3.3` |
+| **Icons & Media** | `lucide-react-native`, `react-native-svg` `15.15` |
+| **Testing** | Jest `29.6`, `react-test-renderer` `19.2` |
+
+---
+
+## 🌐 Dual Backend Architecture
+
+SmartCart utilizes a hybrid API strategy:
+
+```
+                      ┌──────────────────────┐
+                      │    SmartCart App     │
+                      └──────────┬───────────┘
+                                 │
+                 ┌───────────────┴───────────────┐
+                 ▼                               ▼
+       [DummyJSON Public API]       [Custom Backend Server]
+        https://dummyjson.com      https://acrapathapi.schooldb.in
+                 │                               │
+        • Product Catalog               • User Auth (Register/Login)
+        • Category Listings             • JWT Tokens & Sessions
+        • Product Search & Sort         • FCM Token Registration
+        • Product Reviews/Ratings       • Order Creation & History
+```
+
+---
+
+## 📂 Project Structure
+
+```
+SmartCart/
+├── __tests__/                  # Unit and integration test suites
+├── android/                    # Android native configuration & Gradle files
+│   └── app/
+│       ├── google-services.json # Firebase Android configuration
+│       └── src/main/AndroidManifest.xml
+├── ios/                        # iOS native configuration & Podfile
+├── src/
+│   ├── app/
+│   │   └── lib/
+│   │       └── EndPoint.ts     # Centralized API URLs and endpoint contracts
+│   ├── assets/                 # Local images, banners, and static files
+│   ├── components/             # Reusable UI components
+│   │   ├── auth/               # Login & Register modal/sheet components
+│   │   ├── checkout/           # Address & payment selector components
+│   │   ├── layout/             # Headers, search bars, and wrappers
+│   │   ├── ui/                 # Text, ToastModal, and custom buttons
+│   │   └── ProductCard.tsx     # Reusable product card with wishlist & cart buttons
+│   ├── navigation/             # Navigators (RootStack, TabNavigator, Drawer)
+│   ├── screens/                # Screen containers
+│   │   ├── HomeScreen.tsx
+│   │   ├── ProductDetailsScreen.tsx
+│   │   ├── CartScreen.tsx
+│   │   ├── WishlistScreen.tsx
+│   │   ├── CheckoutScreen.tsx
+│   │   ├── OrdersScreen.tsx
+│   │   ├── CategoriesScreen.tsx
+│   │   ├── SearchScreen.tsx
+│   │   ├── ProfileScreen.tsx
+│   │   └── SettingsScreen.tsx
+│   ├── services/               # Core services
+│   │   ├── api/                # Axios instance & interceptors
+│   │   ├── auth/               # AuthProvider context & lifecycle
+│   │   ├── firebase/           # FCM notifications & analytics service
+│   │   ├── query/              # TanStack Query client configuration
+│   │   └── storage/            # Keychain & AsyncStorage wrappers
+│   ├── store/                  # Redux Toolkit store and slices
+│   │   ├── slices/             # cartSlice, wishlistSlice, orderSlice, etc.
+│   │   └── index.ts            # Root store and typed dispatch/selector hooks
+│   ├── theme/                  # Color tokens, spacing, and styling constants
+│   └── utils/                  # Helper utilities (deviceInfo, currency, validators)
+├── App.tsx                     # App entry component with providers and listeners
+├── index.js                    # React Native entry point & background task handler
+└── package.json
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js**: `>= 22.11.0` (LTS recommended)
+- **Package Manager**: `npm` or `yarn`
+- **Android**: Android Studio with SDK `34+`, Java 17+, and an active emulator or USB device
+- **iOS**: macOS with Xcode 15+, CocoaPods (`bundle install && bundle exec pod install`)
+
+### 1. Installation
+Clone the repository and install dependencies:
+```bash
+git clone https://github.com/your-username/SmartCart.git
+cd SmartCart
+npm install
+```
+
+### 2. Firebase Configuration
+Ensure your `google-services.json` file is present in:
+```
+android/app/google-services.json
+```
+*(Contains `project_number`, `project_id`, `mobilesdk_app_id`, and `api_key` for Firebase Cloud Messaging and Analytics).*
+
+### 3. Run on Android
+```bash
+# Start the Metro bundler
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# In a separate terminal, install and run on Android
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+### 4. Run on iOS (macOS only)
+```bash
+# Install CocoaPods dependencies
+cd ios && pod install && cd ..
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# Run iOS Simulator
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 🧪 Testing
 
-## Step 3: Modify your app
+SmartCart includes comprehensive test suites covering Redux slices, authentication, FCM token handling, push notifications, and UI components:
 
-Now that you have successfully run the app, let's make changes!
+```bash
+# Run all tests
+npm test
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+# Run tests in watch mode
+npm test -- --watch
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+---
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+## 📄 License
 
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+This project is licensed under the [MIT License](LICENSE).

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ShieldCheck, Lock, ArrowRight, Package, CheckCircle2 } from 'lucide-react-native';
+import { ShieldCheck, Lock, ArrowRight, Package } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { Text } from '../components/ui/Text';
 import { useAuth } from '../services/auth';
@@ -60,28 +60,6 @@ export function OrdersScreen() {
           <Text variant="body" color="textSecondary" align="center" style={styles.protectedDescription}>
             Your order history, tracking details, and invoices are protected for your security. Please sign in or create an account to view them.
           </Text>
-
-          {/* Value Props */}
-          <View style={styles.benefitsCard}>
-            <View style={styles.benefitRow}>
-              <CheckCircle2 size={16} color="#059669" />
-              <Text variant="caption" color="textPrimary" style={styles.benefitText}>
-                Live GPS delivery & shipment updates
-              </Text>
-            </View>
-            <View style={styles.benefitRow}>
-              <CheckCircle2 size={16} color="#059669" />
-              <Text variant="caption" color="textPrimary" style={styles.benefitText}>
-                Official invoice and receipt downloads
-              </Text>
-            </View>
-            <View style={styles.benefitRow}>
-              <CheckCircle2 size={16} color="#059669" />
-              <Text variant="caption" color="textPrimary" style={styles.benefitText}>
-                Easy 1-tap returns and exchange requests
-              </Text>
-            </View>
-          </View>
 
           {/* Action Button */}
           <TouchableOpacity
@@ -268,24 +246,6 @@ const styles = StyleSheet.create({
   protectedDescription: {
     lineHeight: 20,
     marginBottom: 24,
-  },
-  benefitsCard: {
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 28,
-    gap: 12,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  benefitText: {
-    fontSize: 13,
   },
   signInBtn: {
     width: '100%',
