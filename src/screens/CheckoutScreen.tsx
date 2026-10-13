@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -19,6 +19,7 @@ import { placeOrder, createOrderAsync } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
 import { useToastModal } from '../components/ui';
 import { useAuth } from '../services/auth';
+import { analyticsService } from '../services/firebase';
 import {
   CheckoutHeader,
   AddressSection,
@@ -86,6 +87,13 @@ export function CheckoutScreen() {
     return Math.max(0, subtotal + deliveryFee);
   }, [subtotal, deliveryFee]);
 
+  // Log begin checkout event in Firebase Analytics
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      analyticsService.logBeginCheckout(totalPayable, cartItems.length);
+    }
+  }, []);
+
   // Handle address change selection from dropdown
   const handleSelectAddress = (addr: any) => {
     dispatch(selectAddress(addr.id));
@@ -139,6 +147,13 @@ export function CheckoutScreen() {
         const confirmedOrder = resultAction.payload;
         dispatch(clearCart());
         setIsPlacingOrder(false);
+
+        // Track purchase event in Firebase Analytics
+        analyticsService.logPurchase({
+          id: String(confirmedOrder?.id || Date.now()),
+          total: totalPayable,
+          items: cartItems,
+        });
 
         showConfirm({
           type: 'success',

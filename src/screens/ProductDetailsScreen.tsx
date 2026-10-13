@@ -17,6 +17,7 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { addToCart, updateQuantity, removeFromCart } from '../store/slices/cartSlice';
 import { toggleWishlist } from '../store/slices/wishlistSlice';
 import { useProductByIdQuery } from '../services/query/productQueries';
+import { analyticsService } from '../services/firebase';
 
 import {
   ProductHeader,
@@ -68,6 +69,18 @@ export function ProductDetailsScreen() {
 
   const product = productData || initialProduct;
 
+  // Track product view in Firebase Analytics
+  React.useEffect(() => {
+    if (product) {
+      analyticsService.logViewItem({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        category: product.category,
+      });
+    }
+  }, [product?.id]);
+
   // Wishlist state for this product
   const isInWishlist = useAppSelector((state) =>
     product ? state.wishlist.items.some((item) => item.id === product.id) : false
@@ -113,6 +126,14 @@ export function ProductDetailsScreen() {
         quantity: initialQty,
       })
     );
+    // Track add to cart event in Firebase Analytics
+    analyticsService.logAddToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      quantity: initialQty,
+      category: product.category,
+    });
     showToast({
       type: 'success',
       title: 'Added to Cart 🛒',

@@ -218,6 +218,9 @@ export const ENDPOINTS = {
     // POST /api/auth/login (User login)
     LOGIN: '/api/auth/login',
 
+    // POST & DELETE /api/auth/fcm-token (Register / remove FCM token)
+    FCM_TOKEN: '/api/auth/fcm-token',
+
     // Full URL builder
     buildUrl: (path: string) =>
       `${SERVER_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`,

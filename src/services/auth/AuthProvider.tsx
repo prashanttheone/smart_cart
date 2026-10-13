@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import { Platform } from 'react-native';
 import { keychainStorage } from '../storage/keychainStorage';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
@@ -9,6 +10,8 @@ import {
 } from '../../store/slices/authSlice';
 import { api } from '../api/apiClient';
 import { ENDPOINTS } from '../../app/lib/EndPoint';
+import { analyticsService, notificationService } from '../firebase';
+import { getDeviceInfo } from '../../utils/deviceInfo';
 
 export interface AuthContextType {
   user: User | null;
@@ -58,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLocalToken(storedToken);
         setLocalUser(normalizedUser);
         dispatch(setAuthSession({ user: normalizedUser, token: storedToken }));
+        analyticsService.setUserId(normalizedUser.id);
       } else if (storedToken) {
         // Token exists, reconstruct fallback user
         const fallbackUser: User = {
@@ -95,6 +99,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (email: string, password: string) => {
       try {
         const loginUrl = ENDPOINTS.AUTH.buildUrl(ENDPOINTS.AUTH.LOGIN);
+
+        // Fetch fresh or cached FCM token and device metadata
+        const fcmToken = await notificationService.getStoredOrFreshToken();
+        const deviceInfo = getDeviceInfo();
+        const platform = Platform.OS;
+
         const res = await api.post<{
           message?: string;
           userId: string;
@@ -106,6 +116,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }>(loginUrl, {
           email: email.trim().toLowerCase(),
           password,
+          fcm_token: fcmToken,
+          fcmToken: fcmToken,
+          platform,
+          device_info: deviceInfo,
+          deviceInfo: deviceInfo,
         });
 
         if (res && res.token) {
@@ -132,6 +147,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLocalUser(userData);
           dispatch(setAuthSession({ user: userData, token: res.token }));
 
+          // 3. Firebase Analytics & Push Notification identification
+          analyticsService.setUserId(rawUserId);
+          analyticsService.logLogin('email');
+          notificationService.getFCMToken().then((latestToken) => {
+            if (latestToken && latestToken !== fcmToken) {
+              notificationService.syncTokenWithServer(latestToken).catch(() => {});
+            }
+          }).catch(() => {});
+
           return { success: true, message: res.message };
         }
 
@@ -157,6 +181,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }) => {
       try {
         const registerUrl = ENDPOINTS.AUTH.buildUrl(ENDPOINTS.AUTH.REGISTER);
+
+        // Fetch fresh or cached FCM token and device metadata
+        const fcmToken = await notificationService.getStoredOrFreshToken();
+        const deviceInfo = getDeviceInfo();
+        const platform = Platform.OS;
+
         const res = await api.post<{
           message?: string;
           userId: string;
@@ -171,6 +201,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: payload.phone.trim(),
           password: payload.password,
           is_recruiter: false,
+          fcm_token: fcmToken,
+          fcmToken: fcmToken,
+          platform,
+          device_info: deviceInfo,
+          deviceInfo: deviceInfo,
         });
 
         if (res && res.token) {
@@ -198,6 +233,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLocalUser(userData);
           dispatch(setAuthSession({ user: userData, token: res.token }));
 
+          // 3. Firebase Analytics & Push Notification identification
+          analyticsService.setUserId(rawUserId);
+          analyticsService.logSignUp('email');
+          notificationService.getFCMToken().then((latestToken) => {
+            if (latestToken && latestToken !== fcmToken) {
+              notificationService.syncTokenWithServer(latestToken).catch(() => {});
+            }
+          }).catch(() => {});
+
           return { success: true, message: res.message };
         }
 
@@ -213,12 +257,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [dispatch]
   );
 
+  // Synchronize FCM token on token refresh if user is currently authenticated
+  useEffect(() => {
+    const unsubscribe = notificationService.onTokenRefresh(async (refreshedToken) => {
+      if (token && user) {
+        await notificationService.syncTokenWithServer(refreshedToken).catch((err) => {
+          console.warn('[AuthProvider] Token refresh sync error:', err);
+        });
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [token, user]);
+
   // Logout handler
   const logout = useCallback(async () => {
+    try {
+      const currentToken = await notificationService.getStoredToken();
+      if (currentToken) {
+        await notificationService.unregisterTokenFromServer(currentToken).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('[AuthProvider] Failed to unregister FCM token during logout:', e);
+    }
+
     await keychainStorage.clearAuth();
     setLocalToken(null);
     setLocalUser(null);
     dispatch(logoutRedux());
+
+    // Clear Firebase Analytics & Notification token
+    analyticsService.setUserId(null);
+    notificationService.deleteToken();
   }, [dispatch]);
 
   const isAuthenticated = Boolean(

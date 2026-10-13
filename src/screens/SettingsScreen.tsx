@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Switch,
@@ -6,16 +6,65 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
 import { colors } from '../theme/colors';
+import { useToastModal } from '../components/ui';
+import { notificationService } from '../services/firebase';
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const [notifications, setNotifications] = React.useState(true);
+  const { showToast } = useToastModal();
+  const [notifications, setNotifications] = useState(true);
+  const [isLoadingPermission, setIsLoadingPermission] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    notificationService.isNotificationPreferenceEnabled().then((enabled) => {
+      if (isMounted) setNotifications(enabled);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleToggleNotifications = async (value: boolean) => {
+    if (value) {
+      setIsLoadingPermission(true);
+      const result = await notificationService.requestPermission();
+      setIsLoadingPermission(false);
+
+      if (result.granted) {
+        setNotifications(true);
+        await notificationService.setNotificationPreference(true);
+        showToast({
+          type: 'success',
+          title: 'Push Notifications Enabled 🔔',
+          message: 'You will receive real-time updates for order dispatches, discounts, and deliveries.',
+        });
+      } else {
+        setNotifications(false);
+        await notificationService.setNotificationPreference(false);
+        showToast({
+          type: 'warning',
+          title: 'Notification Permission Denied',
+          message: 'Please grant notification permission in your device system settings to receive updates.',
+        });
+      }
+    } else {
+      setNotifications(false);
+      await notificationService.setNotificationPreference(false);
+      showToast({
+        type: 'info',
+        title: 'Notifications Paused',
+        message: 'Promotional push notifications are temporarily muted.',
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -41,12 +90,19 @@ export function SettingsScreen() {
         <Text style={styles.sectionHeader}>Preferences</Text>
 
         <View style={[styles.row, { borderBottomWidth: 0 }]}>
-          <Text style={styles.label}>Push Notifications</Text>
-          <Switch
-            value={notifications}
-            onValueChange={setNotifications}
-            trackColor={{ false: colors.border, true: colors.primary }}
-          />
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text style={styles.label}>Push Notifications</Text>
+            <Text style={styles.sublabel}>Receive order updates and exclusive deals</Text>
+          </View>
+          {isLoadingPermission ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Switch
+              value={notifications}
+              onValueChange={handleToggleNotifications}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          )}
         </View>
       </View>
 
@@ -133,7 +189,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
+    fontWeight: '600',
     color: colors.textPrimary,
+  },
+  sublabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   value: {
     fontSize: 13,
