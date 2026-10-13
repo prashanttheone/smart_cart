@@ -4,31 +4,17 @@ import { colors } from '../theme/colors';
 
 export function SettingsScreen() {
   const [notifications, setNotifications] = React.useState(true);
-  const [darkMode, setDarkMode] = React.useState(false);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>App Settings</Text>
-      </View>
-
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>Preferences</Text>
 
-        <View style={styles.row}>
+        <View style={[styles.row, { borderBottomWidth: 0 }]}>
           <Text style={styles.label}>Push Notifications</Text>
           <Switch
             value={notifications}
             onValueChange={setNotifications}
-            trackColor={{ false: colors.border, true: colors.primary }}
-          />
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Dark Theme (Preview)</Text>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
             trackColor={{ false: colors.border, true: colors.primary }}
           />
         </View>
@@ -65,18 +51,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
   },
   section: {
     margin: 16,
