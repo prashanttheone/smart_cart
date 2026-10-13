@@ -1,8 +1,7 @@
 {
   "project_info": {
     "project_number": "1061238322639",
-    "project_id": "smart-icpl",
-    "storage_bucket": "smart-icpl.firebasestorage.app"
+    "project_id": "smart-icpl"
   },
   "client": [
     {
@@ -12,17 +11,11 @@
           "package_name": "com.smartcart"
         }
       },
-      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyC76mCnVz-6Hp6Hhw5TEVlfE0w6R4U8wc0"
         }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
+      ]
     }
   ],
   "configuration_version": "1"
