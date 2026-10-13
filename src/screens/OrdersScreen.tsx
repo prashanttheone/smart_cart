@@ -24,7 +24,16 @@ const SAMPLE_ORDERS = [
 
 export function OrdersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAuth();
+  const { orders, isLoading } = useAppSelector((state) => state.orders);
+
+  useEffect(() => {
+    const userId = user?.userId || user?.id;
+    if (isAuthenticated && userId) {
+      dispatch(fetchUserOrders(userId));
+    }
+  }, [dispatch, isAuthenticated, user?.userId, user?.id]);
 
   // Protected View for Unauthenticated Users
   if (!isAuthenticated) {
@@ -113,33 +122,86 @@ export function OrdersScreen() {
       </View>
 
       <FlatList
-        data={SAMPLE_ORDERS}
-        keyExtractor={(item) => item.id}
+        data={orders}
+        keyExtractor={(item) => item.id || (item as any).order_id}
         contentContainerStyle={styles.list}
+        refreshing={isLoading}
+        onRefresh={() => {
+          const userId = user?.userId || user?.id;
+          if (userId) dispatch(fetchUserOrders(userId));
+        }}
+        ListEmptyComponent={
+          !isLoading ? (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconBadge}>
+                <Package size={40} color={colors.textSecondary} />
+              </View>
+              <Text weight="bold" size="lg" color="textPrimary" style={styles.emptyTitle}>
+                No Orders Yet
+              </Text>
+              <Text variant="body" color="textSecondary" align="center" style={styles.emptySubtitle}>
+                When you place orders through checkout, they will appear here with live tracking.
+              </Text>
+              <TouchableOpacity
+                style={styles.shopNowBtn}
+                onPress={() => navigation.navigate('DrawerRoot', { screen: 'MainTabs' } as any)}
+                activeOpacity={0.85}
+              >
+                <Text weight="bold" size="sm" color="textInverse">
+                  Start Shopping
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={styles.orderIdRow}>
                 <Package size={18} color={colors.primary} />
                 <Text weight="bold" size="md" color="textPrimary" style={styles.orderId}>
-                  {item.id}
+                  {item.id || (item as any).order_id}
                 </Text>
               </View>
-              <View style={styles.badge}>
-                <Text weight="bold" size="xs" color="secondary">
+              <View
+                style={[
+                  styles.badge,
+                  item.status?.toLowerCase() === 'completed' || item.status === 'Delivered'
+                    ? styles.badgeSuccess
+                    : styles.badgePending,
+                ]}
+              >
+                <Text
+                  weight="bold"
+                  size="xs"
+                  style={
+                    item.status?.toLowerCase() === 'completed' || item.status === 'Delivered'
+                      ? styles.badgeSuccessText
+                      : styles.badgePendingText
+                  }
+                >
                   {item.status}
                 </Text>
               </View>
             </View>
             <Text variant="caption" color="textMuted" style={styles.date}>
-              {item.date} • {item.items} items
+              {item.date} • {item.itemsCount ?? 1} items
             </Text>
+            {item.shippingAddress ? (
+              <Text variant="caption" color="textSecondary" numberOfLines={1} style={styles.addressText}>
+                📍 {item.shippingAddress}
+              </Text>
+            ) : null}
             <View style={styles.bottomRow}>
               <Text variant="body" color="textSecondary">
                 Total Amount:
               </Text>
               <Text weight="bold" size="md" color="textPrimary">
-                ${item.total.toFixed(2)}
+                ₹{item.total.toFixed(2)}
               </Text>
             </View>
           </View>
@@ -283,6 +345,54 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: 10,
+  },
+  addressText: {
+    marginBottom: 8,
+  },
+  badgeSuccess: {
+    backgroundColor: '#ECFDF5',
+  },
+  badgeSuccessText: {
+    color: '#059669',
+  },
+  badgePending: {
+    backgroundColor: colors.secondaryLight,
+  },
+  badgePendingText: {
+    color: colors.secondary,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 56,
+    paddingHorizontal: 24,
+  },
+  emptyIconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  shopNowBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  loadingContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
