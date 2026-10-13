@@ -19,7 +19,6 @@ SmartCart is a feature-packed, high-performance mobile e-commerce application bu
 - **Instant Badge Badging**: Real-time cart count badges in bottom navigation tabs and home header.
 
 ### 💳 Checkout & Order Processing
-- **Streamlined Checkout Flow**: Multi-step checkout covering shipping address, delivery options, and payment methods (Card, UPI, Net Banking, COD).
 - **Order Placement**: Sends order payloads directly to the backend order processing service.
 - **Order History & Tracking**: Authenticated order history dashboard displaying past orders, delivery status badges, tracking timestamps, and item receipts.
 - **Protected State UI**: Clean, secure auth prompt when unauthenticated users access their orders.
