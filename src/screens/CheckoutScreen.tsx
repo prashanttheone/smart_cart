@@ -15,7 +15,7 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { clearCart } from '../store/slices/cartSlice';
 import { selectAddress } from '../store/slices/addressSlice';
 import { selectPaymentMethod } from '../store/slices/checkoutSlice';
-import { placeOrder } from '../store/slices/orderSlice';
+import { placeOrder, createOrderAsync } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
 import { useToastModal } from '../components/ui';
 import { useAuth } from '../services/auth';
@@ -97,7 +97,7 @@ export function CheckoutScreen() {
   };
 
   // Handle placing order
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cartItems.length === 0) {
       showAlert({
         type: 'warning',
@@ -107,41 +107,76 @@ export function CheckoutScreen() {
       return;
     }
 
+    const currentUserId = user?.userId || user?.id;
+    if (!currentUserId) {
+      showAlert({
+        type: 'warning',
+        title: 'Sign In Required',
+        message: 'Please sign in or register to place your order.',
+      });
+      navigation.navigate('Auth', { initialMode: 'login' });
+      return;
+    }
+
+    const fullAddress = `${activeAddress.fullName}, ${activeAddress.streetAddress}`.trim();
+
     setIsPlacingOrder(true);
 
-    setTimeout(() => {
-      dispatch(
-        placeOrder({
+    try {
+      const resultAction = await dispatch(
+        createOrderAsync({
+          userId: currentUserId,
+          address: fullAddress,
           items: cartItems,
-          total: totalPayable,
-          shippingAddress: `${activeAddress.fullName}, ${activeAddress.streetAddress}`,
+          totalAmount: totalPayable,
           deliveryMethod: activeDeliveryMethod?.title || 'Standard delivery',
           paymentMethod: activePaymentMethod?.subtitle || 'UPI, cards, or Cash on Delivery',
+          status: 'pending',
         })
       );
 
-      dispatch(clearCart());
-      setIsPlacingOrder(false);
+      if (createOrderAsync.fulfilled.match(resultAction)) {
+        const confirmedOrder = resultAction.payload;
+        dispatch(clearCart());
+        setIsPlacingOrder(false);
 
-      showConfirm({
-        type: 'success',
-        title: 'Order Placed! 🎉',
-        message: `Your order of ₹${totalPayable.toFixed(2)} has been confirmed successfully.`,
-        confirmText: 'Track Order',
-        confirmVariant: 'success',
-        cancelText: 'Continue Shopping',
-        onConfirm: () => {
-          navigation.goBack();
-          navigation.navigate('DrawerRoot', {
-            screen: 'MainTabs',
-            params: { screen: 'Orders' },
-          } as any);
-        },
-        onCancel: () => {
-          navigation.goBack();
-        },
+        showConfirm({
+          type: 'success',
+          title: 'Order Placed! 🎉',
+          message: `Your order #${confirmedOrder.id} of ₹${totalPayable.toFixed(2)} has been confirmed successfully.`,
+          confirmText: 'Track Order',
+          confirmVariant: 'success',
+          cancelText: 'Continue Shopping',
+          onConfirm: () => {
+            navigation.goBack();
+            navigation.navigate('DrawerRoot', {
+              screen: 'MainTabs',
+              params: { screen: 'Orders' },
+            } as any);
+          },
+          onCancel: () => {
+            navigation.goBack();
+          },
+        });
+      } else {
+        const errorMsg =
+          (resultAction.payload as string) ||
+          'Unable to complete order with backend server. Please try again.';
+        setIsPlacingOrder(false);
+        showAlert({
+          type: 'error',
+          title: 'Order Failed',
+          message: errorMsg,
+        });
+      }
+    } catch (err: any) {
+      setIsPlacingOrder(false);
+      showAlert({
+        type: 'error',
+        title: 'Order Failed',
+        message: err?.message || 'An unexpected error occurred while placing your order.',
       });
-    }, 900);
+    }
   };
 
   return (

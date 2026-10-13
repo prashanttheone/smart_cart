@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   FlatList,
   StyleSheet,
   View,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,6 +12,8 @@ import { ShieldCheck, Lock, ArrowRight, Package, CheckCircle2 } from 'lucide-rea
 import { colors } from '../theme/colors';
 import { Text } from '../components/ui/Text';
 import { useAuth } from '../services/auth';
+import { useAppDispatch, useAppSelector } from '../store';
+import { fetchUserOrders } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
 
 const SAMPLE_ORDERS = [
