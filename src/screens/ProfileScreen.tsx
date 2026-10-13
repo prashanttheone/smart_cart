@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { useToastModal } from '../components/ui';
@@ -68,12 +69,24 @@ export function ProfileScreen() {
       <View style={styles.card}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {user?.name ? user.name[0].toUpperCase() : '👤'}
+            {user?.full_name || user?.name
+              ? (user.full_name || user.name).trim()[0].toUpperCase()
+              : '👤'}
           </Text>
         </View>
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user?.name ?? 'Guest User'}</Text>
+          <Text style={styles.userName}>{(user?.full_name || user?.name) ?? 'Guest User'}</Text>
           <Text style={styles.userEmail}>{user?.email ?? 'Not logged in'}</Text>
+
+          {user?.userId && (
+            <View style={styles.userIdRow}>
+              <Text style={styles.userIdLabel}>User ID: </Text>
+              <Text style={styles.userIdValue} numberOfLines={1} ellipsizeMode="middle">
+                {user.userId}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.badgeRow}>
             <View
               style={[
@@ -87,9 +100,15 @@ export function ProfileScreen() {
                   { color: isAuthenticated ? colors.secondary : colors.danger },
                 ]}
               >
-                {isAuthenticated ? '● Authenticated (RTK)' : '○ Logged Out'}
+                {isAuthenticated ? '● Authenticated' : '○ Logged Out'}
               </Text>
             </View>
+
+            {isAuthenticated && user?.is_recruiter && (
+              <View style={styles.recruiterBadge}>
+                <Text style={styles.recruiterBadgeText}>👔 Recruiter</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -217,7 +236,29 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  userIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  userIdLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  userIdValue: {
+    fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceVariant,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
   badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     marginTop: 8,
   },
   statusBadge: {
@@ -229,6 +270,20 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  recruiterBadge: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    marginLeft: 6,
+  },
+  recruiterBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4338CA',
   },
   cardTitle: {
     fontSize: 15,

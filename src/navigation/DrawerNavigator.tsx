@@ -40,7 +40,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         <Text style={styles.headerTitle}>
           Smart<Text style={styles.headerAccent}>Cart</Text>
         </Text>
-        <Text style={styles.userSubtitle}>{user?.email ?? 'Guest User'}</Text>
+        <Text style={styles.userSubtitle}>
+          {user?.full_name ? user.full_name.trim() : user?.email ?? 'Guest User'}
+        </Text>
         {cartCount > 0 && (
           <View style={styles.cartInfoBadge}>
             <Text style={styles.cartInfoText}>{cartCount} items in cart</Text>

@@ -46,15 +46,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedUser = await keychainStorage.getUserData();
 
       if (storedToken && storedUser) {
+        const normalizedUser: User = {
+          ...storedUser,
+          id: (storedUser as any).userId || storedUser.id || 'user_restored',
+          userId: (storedUser as any).userId || storedUser.id || 'user_restored',
+          name: (storedUser as any).full_name || storedUser.name || 'Verified Customer',
+          full_name: (storedUser as any).full_name || storedUser.name || 'Verified Customer',
+          is_recruiter: Boolean((storedUser as any).is_recruiter),
+          token: storedToken,
+        };
         setLocalToken(storedToken);
-        setLocalUser(storedUser);
-        dispatch(setAuthSession({ user: storedUser, token: storedToken }));
+        setLocalUser(normalizedUser);
+        dispatch(setAuthSession({ user: normalizedUser, token: storedToken }));
       } else if (storedToken) {
         // Token exists, reconstruct fallback user
         const fallbackUser: User = {
           id: 'user_restored',
+          userId: 'user_restored',
           name: 'Verified Customer',
+          full_name: 'Verified Customer',
           email: 'customer@smartcart.app',
+          is_recruiter: false,
+          token: storedToken,
         };
         setLocalToken(storedToken);
         setLocalUser(fallbackUser);
@@ -87,6 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           userId: string;
           email: string;
           full_name?: string;
+          name?: string;
+          is_recruiter?: boolean;
           token: string;
         }>(loginUrl, {
           email: email.trim().toLowerCase(),
@@ -94,10 +109,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (res && res.token) {
+          const rawUserId = res.userId || (res as any).id || (res as any)._id || 'user_id';
+          const rawFullName = (res.full_name || res.name || res.email.split('@')[0]).trim();
+          const isRecruiter = Boolean(res.is_recruiter);
+
           const userData: User = {
-            id: res.userId,
+            id: rawUserId,
+            userId: rawUserId,
             email: res.email,
-            name: res.full_name || res.email.split('@')[0],
+            name: rawFullName,
+            full_name: res.full_name ?? rawFullName,
+            is_recruiter: isRecruiter,
+            token: res.token,
           };
 
           // 1. Persist securely in Keychain & storage
@@ -139,6 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           userId: string;
           email: string;
           full_name?: string;
+          name?: string;
+          is_recruiter?: boolean;
           token: string;
         }>(registerUrl, {
           full_name: payload.fullName.trim(),
@@ -149,11 +174,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (res && res.token) {
+          const rawUserId = res.userId || (res as any).id || (res as any)._id || 'user_id';
+          const rawFullName = (res.full_name || res.name || payload.fullName).trim();
+          const isRecruiter = Boolean(res.is_recruiter);
+
           const userData: User = {
-            id: res.userId,
-            email: res.email,
-            name: res.full_name || payload.fullName.trim(),
+            id: rawUserId,
+            userId: rawUserId,
+            email: res.email || payload.email.trim().toLowerCase(),
+            name: rawFullName,
+            full_name: res.full_name ?? rawFullName,
             phone: payload.phone.trim(),
+            is_recruiter: isRecruiter,
+            token: res.token,
           };
 
           // 1. Persist securely in Keychain & storage

@@ -57,7 +57,7 @@ export function CheckoutScreen() {
     return (
       addresses.find((a) => a.id === selectedAddressId) ||
       addresses[0] || {
-        fullName: user?.name || 'Prashant Kumar',
+        fullName: user?.full_name?.trim() || user?.name || 'Prashant Kumar',
         type: 'Home' as const,
         streetAddress: 'Your saved delivery address goes here',
       }

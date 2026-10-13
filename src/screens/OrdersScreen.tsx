@@ -105,7 +105,7 @@ export function OrdersScreen() {
           </View>
         </View>
         <Text variant="caption" color="textSecondary" style={styles.subtitle}>
-          Logged in as {user?.name || user?.email}
+          Logged in as {user?.full_name ? user.full_name.trim() : user?.name || user?.email}
         </Text>
       </View>
 
