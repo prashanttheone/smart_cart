@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -8,6 +8,7 @@ import {
   StyleProp,
   ViewStyle,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { Text } from './ui/Text';
@@ -40,7 +41,7 @@ export interface CategoryListProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
 }
 
-export const CategoryList: React.FC<CategoryListProps> = ({
+const CategoryListComponent: React.FC<CategoryListProps> = ({
   selectedCategory,
   onSelectCategory,
   style,
@@ -49,53 +50,58 @@ export const CategoryList: React.FC<CategoryListProps> = ({
   const { data: categories = [], isLoading: isCategoriesLoading } = useCategoryListQuery();
   const { data: thumbnailMap = {} } = useCategoryThumbnailsQuery();
 
-  const renderCategoryItem = ({ item: slug, index }: { item: string; index: number }) => {
-    const isSelected = selectedCategory === slug;
-    const displayName = formatCategoryName(slug);
-    const bgColor = getCategoryBgColor(index);
-    const imageUrl = thumbnailMap[slug];
+  const keyExtractor = useCallback((item: string) => item, []);
 
-    return (
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => onSelectCategory?.(slug)}
-        style={styles.categoryItem}
-        accessibilityRole="button"
-        accessibilityLabel={`Category ${displayName}`}
-      >
-        {/* Circle Card with Dynamic Pastel Background */}
-        <View
-          style={[
-            styles.circleContainer,
-            { backgroundColor: bgColor },
-            isSelected && styles.circleSelected,
-          ]}
-        >
-          {imageUrl ? (
-            <Image
-              source={{ uri: imageUrl }}
-              style={styles.categoryImage}
-              resizeMode="contain"
-            />
-          ) : (
-            <View style={styles.fallbackPlaceholder} />
-          )}
-        </View>
+  const renderCategoryItem = useCallback(
+    ({ item: slug, index }: { item: string; index: number }) => {
+      const isSelected = selectedCategory === slug;
+      const displayName = formatCategoryName(slug);
+      const bgColor = getCategoryBgColor(index);
+      const imageUrl = thumbnailMap[slug];
 
-        {/* Category Label */}
-        <Text
-          weight={isSelected ? 'bold' : 'medium'}
-          size="xs"
-          color={isSelected ? 'primary' : 'textPrimary'}
-          align="center"
-          style={styles.categoryLabel}
-          numberOfLines={2}
+      return (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => onSelectCategory?.(slug)}
+          style={styles.categoryItem}
+          accessibilityRole="button"
+          accessibilityLabel={`Category ${displayName}`}
         >
-          {displayName}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+          {/* Circle Card with Dynamic Pastel Background */}
+          <View
+            style={[
+              styles.circleContainer,
+              { backgroundColor: bgColor },
+              isSelected && styles.circleSelected,
+            ]}
+          >
+            {imageUrl ? (
+              <Image
+                source={{ uri: imageUrl }}
+                style={styles.categoryImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={styles.fallbackPlaceholder} />
+            )}
+          </View>
+
+          {/* Category Label */}
+          <Text
+            weight={isSelected ? 'bold' : 'medium'}
+            size="xs"
+            color={isSelected ? 'primary' : 'textPrimary'}
+            align="center"
+            style={styles.categoryLabel}
+            numberOfLines={2}
+          >
+            {displayName}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    [selectedCategory, onSelectCategory, thumbnailMap]
+  );
 
   if (isCategoriesLoading && categories.length === 0) {
     return (
@@ -110,14 +116,20 @@ export const CategoryList: React.FC<CategoryListProps> = ({
       <FlatList
         horizontal
         data={categories}
-        keyExtractor={(item) => item}
+        keyExtractor={keyExtractor}
         renderItem={renderCategoryItem}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={[styles.listContent, contentContainerStyle]}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={3}
+        removeClippedSubviews={Platform.OS === 'android'}
       />
     </View>
   );
 };
+
+export const CategoryList = React.memo(CategoryListComponent);
 
 const styles = StyleSheet.create({
   container: {

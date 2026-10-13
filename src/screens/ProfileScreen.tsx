@@ -19,7 +19,6 @@ import {
   Settings as SettingsIcon,
   ChevronRight,
   LogOut,
-  ShieldCheck,
 } from 'lucide-react-native';
 
 export function ProfileScreen() {

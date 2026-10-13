@@ -5,6 +5,7 @@ import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
   DrawerItemList,
+  DrawerNavigationOptions,
 } from '@react-navigation/drawer';
 import { ShoppingBag, ClipboardList, Settings, ShoppingCart } from 'lucide-react-native';
 import { colors } from '../theme/colors';
@@ -64,20 +65,11 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   );
 }
 
-const headerStyle = { backgroundColor: colors.surface };
-
 export function DrawerNavigator() {
   return (
     <Drawer.Navigator
       drawerContent={CustomDrawerContent}
-      screenOptions={{
-        headerShown: false,
-        swipeEnabled: false,
-        drawerActiveTintColor: colors.primary,
-        drawerInactiveTintColor: colors.textPrimary,
-        drawerActiveBackgroundColor: colors.primaryLight,
-        drawerLabelStyle: styles.drawerLabel,
-      }}
+      screenOptions={DRAWER_SCREEN_OPTIONS}
     >
       <Drawer.Screen
         name="MainTabs"
@@ -179,5 +171,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+const DRAWER_SCREEN_OPTIONS: DrawerNavigationOptions = {
+  headerShown: false,
+  swipeEnabled: false,
+  drawerActiveTintColor: colors.primary,
+  drawerInactiveTintColor: colors.textPrimary,
+  drawerActiveBackgroundColor: colors.primaryLight,
+  drawerLabelStyle: styles.drawerLabel,
+};
 
 export default DrawerNavigator;

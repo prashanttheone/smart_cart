@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -53,7 +53,7 @@ const SORT_OPTIONS: SortOption[] = [
   { id: 'rating', label: 'Top Rated', sortBy: 'rating', order: 'desc' },
 ];
 
-export function CategoryProductsScreen() {
+const CategoryProductsScreenComponent: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<CategoryProductsNavigationProp>();
   const route = useRoute<CategoryProductsScreenRouteProp>();
@@ -74,87 +74,118 @@ export function CategoryProductsScreen() {
   // Sort option state
   const [activeSort, setActiveSort] = useState<SortOption>(SORT_OPTIONS[0]);
 
-  const handleProductPress = (product: Product) => {
-    navigation.navigate('ProductDetails', { product });
-  };
+  const handleProductPress = useCallback(
+    (product: Product) => {
+      navigation.navigate('ProductDetails', { product });
+    },
+    [navigation]
+  );
 
-  const renderHeader = () => (
-    <View style={styles.headerExtraContent}>
-      {/* Category Pills Switcher */}
-      <View style={styles.categoriesContainer}>
-        <FlatList
-          horizontal
-          data={categorySlugs}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryPillsList}
-          renderItem={({ item: slug }) => {
-            const isSelected = selectedCategory === slug;
-            const displayName = formatCategoryName(slug);
-            return (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setSelectedCategory(slug)}
-                style={[
-                  styles.categoryPill,
-                  isSelected && styles.categoryPillActive,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Category ${displayName}`}
-              >
-                <Text
-                  weight={isSelected ? 'bold' : 'medium'}
-                  size="xs"
-                  color={isSelected ? 'textInverse' : 'textPrimary'}
-                >
-                  {displayName}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
+  const categoryKeyExtractor = useCallback((item: string) => item, []);
+  const sortKeyExtractor = useCallback((item: SortOption) => item.id, []);
 
-      {/* Sorting / Filter Bar */}
-      <View style={styles.sortBarContainer}>
-        <View style={styles.sortLabelRow}>
-          <ArrowUpDown size={14} color={colors.primary} />
-          <Text variant="caption" weight="semiBold" color="textSecondary">
-            SORT BY
+  const renderCategoryPill = useCallback(
+    ({ item: slug }: { item: string }) => {
+      const isSelected = selectedCategory === slug;
+      const displayName = formatCategoryName(slug);
+      return (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setSelectedCategory(slug)}
+          style={[
+            styles.categoryPill,
+            isSelected && styles.categoryPillActive,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`Category ${displayName}`}
+        >
+          <Text
+            weight={isSelected ? 'bold' : 'medium'}
+            size="xs"
+            color={isSelected ? 'textInverse' : 'textPrimary'}
+          >
+            {displayName}
           </Text>
+        </TouchableOpacity>
+      );
+    },
+    [selectedCategory]
+  );
+
+  const renderSortPill = useCallback(
+    ({ item }: { item: SortOption }) => {
+      const isSelected = activeSort.id === item.id;
+      return (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setActiveSort(item)}
+          style={[
+            styles.sortPill,
+            isSelected && styles.sortPillActive,
+          ]}
+        >
+          <Text
+            variant="caption"
+            weight={isSelected ? 'bold' : 'regular'}
+            color={isSelected ? 'primary' : 'textSecondary'}
+            size="xs"
+          >
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    [activeSort.id]
+  );
+
+  const listHeaderComponent = useMemo(
+    () => (
+      <View style={styles.headerExtraContent}>
+        {/* Category Pills Switcher */}
+        <View style={styles.categoriesContainer}>
+          <FlatList
+            horizontal
+            data={categorySlugs}
+            keyExtractor={categoryKeyExtractor}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryPillsList}
+            renderItem={renderCategoryPill}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={3}
+          />
         </View>
 
-        <FlatList
-          horizontal
-          data={SORT_OPTIONS}
-          keyExtractor={(item) => item.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.sortOptionsList}
-          renderItem={({ item }) => {
-            const isSelected = activeSort.id === item.id;
-            return (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setActiveSort(item)}
-                style={[
-                  styles.sortPill,
-                  isSelected && styles.sortPillActive,
-                ]}
-              >
-                <Text
-                  variant="caption"
-                  weight={isSelected ? 'bold' : 'regular'}
-                  color={isSelected ? 'primary' : 'textSecondary'}
-                  size="xs"
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+        {/* Sorting / Filter Bar */}
+        <View style={styles.sortBarContainer}>
+          <View style={styles.sortLabelRow}>
+            <ArrowUpDown size={14} color={colors.primary} />
+            <Text variant="caption" weight="semiBold" color="textSecondary">
+              SORT BY
+            </Text>
+          </View>
+
+          <FlatList
+            horizontal
+            data={SORT_OPTIONS}
+            keyExtractor={sortKeyExtractor}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sortOptionsList}
+            renderItem={renderSortPill}
+            initialNumToRender={5}
+            maxToRenderPerBatch={5}
+            windowSize={3}
+          />
+        </View>
       </View>
-    </View>
+    ),
+    [
+      categorySlugs,
+      categoryKeyExtractor,
+      renderCategoryPill,
+      sortKeyExtractor,
+      renderSortPill,
+    ]
   );
 
   return (
@@ -235,11 +266,13 @@ export function CategoryProductsScreen() {
         limit={10}
         title={formatCategoryName(selectedCategory)}
         onPressProduct={handleProductPress}
-        ListHeaderComponent={renderHeader()}
+        ListHeaderComponent={listHeaderComponent}
       />
     </View>
   );
-}
+};
+
+export const CategoryProductsScreen = React.memo(CategoryProductsScreenComponent);
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Image,
@@ -25,7 +25,7 @@ export interface ProductCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCardComponent: React.FC<ProductCardProps> = ({
   product,
   onPress,
   onAddToCart,
@@ -39,29 +39,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     state.wishlist.items.some((item) => item.id === product.id)
   );
 
-  const discount = product.discountPercentage
-    ? Math.round(product.discountPercentage)
-    : 0;
+  const discount = useMemo(
+    () => (product.discountPercentage ? Math.round(product.discountPercentage) : 0),
+    [product.discountPercentage]
+  );
 
-  const originalPrice = discount > 0
-    ? (product.price * 100) / (100 - discount)
-    : null;
+  const originalPrice = useMemo(
+    () => (discount > 0 ? (product.price * 100) / (100 - discount) : null),
+    [discount, product.price]
+  );
 
-  const formattedPrice =
-    typeof product.price === 'number'
-      ? product.price % 1 === 0
-        ? product.price.toString()
-        : product.price.toFixed(2)
-      : product.price;
+  const formattedPrice = useMemo(
+    () =>
+      typeof product.price === 'number'
+        ? product.price % 1 === 0
+          ? product.price.toString()
+          : product.price.toFixed(2)
+        : product.price,
+    [product.price]
+  );
 
-  const formattedOriginalPrice =
-    originalPrice !== null
-      ? originalPrice % 1 === 0
-        ? Math.round(originalPrice).toString()
-        : originalPrice.toFixed(2)
-      : null;
+  const formattedOriginalPrice = useMemo(
+    () =>
+      originalPrice !== null
+        ? originalPrice % 1 === 0
+          ? Math.round(originalPrice).toString()
+          : originalPrice.toFixed(2)
+        : null,
+    [originalPrice]
+  );
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     if (onAddToCart) {
       onAddToCart(product);
     } else {
@@ -75,20 +83,49 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         })
       );
     }
-  };
+  }, [onAddToCart, product, dispatch]);
 
-  const formattedSubtitle =
-    product.weight && product.weight > 0
-      ? `${product.weight} kg`
-      : product.brand || product.category;
+  const handleToggleWishlist = useCallback(() => {
+    dispatch(
+      toggleWishlist({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        thumbnail: product.thumbnail,
+        category: product.category,
+        brand: product.brand,
+        rating: product.rating,
+        discountPercentage: product.discountPercentage,
+      })
+    );
+  }, [dispatch, product]);
 
-  const formattedRating = product.rating ? product.rating.toFixed(1) : '4.5';
-  const reviewsCount = product.reviews?.length ? `${product.reviews.length * 400}+` : '1.2k';
+  const handlePress = useCallback(() => {
+    onPress?.(product);
+  }, [onPress, product]);
+
+  const formattedSubtitle = useMemo(
+    () =>
+      product.weight && product.weight > 0
+        ? `${product.weight} kg`
+        : product.brand || product.category,
+    [product.weight, product.brand, product.category]
+  );
+
+  const formattedRating = useMemo(
+    () => (product.rating ? product.rating.toFixed(1) : '4.5'),
+    [product.rating]
+  );
+
+  const reviewsCount = useMemo(
+    () => (product.reviews?.length ? `${product.reviews.length * 400}+` : '1.2k'),
+    [product.reviews]
+  );
 
   return (
     <TouchableOpacity
       activeOpacity={0.88}
-      onPress={() => onPress?.(product)}
+      onPress={handlePress}
       style={[styles.card, flex ? styles.flexCard : { width: cardWidth }, style]}
       accessibilityRole="button"
       accessibilityLabel={`Product ${product.title}`}
@@ -112,20 +149,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Wishlist Toggle Button */}
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() =>
-            dispatch(
-              toggleWishlist({
-                id: product.id,
-                title: product.title,
-                price: product.price,
-                thumbnail: product.thumbnail,
-                category: product.category,
-                brand: product.brand,
-                rating: product.rating,
-                discountPercentage: product.discountPercentage,
-              })
-            )
-          }
+          onPress={handleToggleWishlist}
           style={styles.wishlistBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
@@ -194,6 +218,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     </TouchableOpacity>
   );
 };
+
+export const ProductCard = React.memo(ProductCardComponent);
 
 const styles = StyleSheet.create({
   card: {

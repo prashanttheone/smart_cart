@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -24,7 +25,7 @@ import { Product } from '../services/query/productQueries';
 
 type CategoriesScreenNavProp = NativeStackNavigationProp<RootStackParamList>;
 
-export function CategoriesScreen() {
+const CategoriesScreenComponent: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<CategoriesScreenNavProp>();
   const cartTotalCount = useAppSelector((state) => state.cart.totalCount);
@@ -36,45 +37,62 @@ export function CategoriesScreen() {
   const activeCategory =
     selectedCategory || (categorySlugs.length > 0 ? categorySlugs[0] : 'beauty');
 
-  const handleProductPress = (product: Product) => {
-    navigation.navigate('ProductDetails', { product });
-  };
+  const handleProductPress = useCallback(
+    (product: Product) => {
+      navigation.navigate('ProductDetails', { product });
+    },
+    [navigation]
+  );
 
-  const renderHeader = () => (
-    <View style={styles.headerContent}>
-      {/* Category Pills Slider */}
-      <FlatList
-        horizontal
-        data={categorySlugs}
-        keyExtractor={(item) => item}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryPillsList}
-        renderItem={({ item: slug }) => {
-          const isSelected = activeCategory === slug;
-          const displayName = formatCategoryName(slug);
-          return (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setSelectedCategory(slug)}
-              style={[
-                styles.categoryPill,
-                isSelected && styles.categoryPillActive,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Category ${displayName}`}
-            >
-              <Text
-                weight={isSelected ? 'bold' : 'medium'}
-                size="xs"
-                color={isSelected ? 'textInverse' : 'textPrimary'}
-              >
-                {displayName}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
-    </View>
+  const categoryKeyExtractor = useCallback((item: string) => item, []);
+
+  const renderCategoryPill = useCallback(
+    ({ item: slug }: { item: string }) => {
+      const isSelected = activeCategory === slug;
+      const displayName = formatCategoryName(slug);
+      return (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setSelectedCategory(slug)}
+          style={[
+            styles.categoryPill,
+            isSelected && styles.categoryPillActive,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`Category ${displayName}`}
+        >
+          <Text
+            weight={isSelected ? 'bold' : 'medium'}
+            size="xs"
+            color={isSelected ? 'textInverse' : 'textPrimary'}
+          >
+            {displayName}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    [activeCategory]
+  );
+
+  const listHeaderComponent = useMemo(
+    () => (
+      <View style={styles.headerContent}>
+        {/* Category Pills Slider */}
+        <FlatList
+          horizontal
+          data={categorySlugs}
+          keyExtractor={categoryKeyExtractor}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryPillsList}
+          renderItem={renderCategoryPill}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={3}
+          removeClippedSubviews={Platform.OS === 'android'}
+        />
+      </View>
+    ),
+    [categorySlugs, categoryKeyExtractor, renderCategoryPill]
   );
 
   return (
@@ -128,12 +146,14 @@ export function CategoriesScreen() {
           limit={10}
           title={formatCategoryName(activeCategory)}
           onPressProduct={handleProductPress}
-          ListHeaderComponent={renderHeader()}
+          ListHeaderComponent={listHeaderComponent}
         />
       )}
     </View>
   );
-}
+};
+
+export const CategoriesScreen = React.memo(CategoriesScreenComponent);
 
 const styles = StyleSheet.create({
   container: {

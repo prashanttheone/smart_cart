@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -16,12 +16,6 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { fetchUserOrders } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
 
-const SAMPLE_ORDERS = [
-  { id: 'ORD-9821', date: 'Oct 11, 2026', total: 149.99, status: 'Delivered', items: 3 },
-  { id: 'ORD-9740', date: 'Oct 04, 2026', total: 42.5, status: 'Delivered', items: 1 },
-  { id: 'ORD-9512', date: 'Sep 28, 2026', total: 219.0, status: 'Delivered', items: 4 },
-];
-
 export function OrdersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
@@ -34,6 +28,63 @@ export function OrdersScreen() {
       dispatch(fetchUserOrders(userId));
     }
   }, [dispatch, isAuthenticated, user?.userId, user?.id]);
+
+  const orderKeyExtractor = useCallback(
+    (item: any) => item.id || (item as any).order_id,
+    []
+  );
+
+  const renderOrderItem = useCallback(
+    ({ item }: { item: any }) => (
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={styles.orderIdRow}>
+            <Package size={18} color={colors.primary} />
+            <Text weight="bold" size="md" color="textPrimary" style={styles.orderId}>
+              {item.id || (item as any).order_id}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.badge,
+              item.status?.toLowerCase() === 'completed' || item.status === 'Delivered'
+                ? styles.badgeSuccess
+                : styles.badgePending,
+            ]}
+          >
+            <Text
+              weight="bold"
+              size="xs"
+              style={
+                item.status?.toLowerCase() === 'completed' || item.status === 'Delivered'
+                  ? styles.badgeSuccessText
+                  : styles.badgePendingText
+              }
+            >
+              {item.status}
+            </Text>
+          </View>
+        </View>
+        <Text variant="caption" color="textMuted" style={styles.date}>
+          {item.date} • {item.itemsCount ?? 1} items
+        </Text>
+        {item.shippingAddress ? (
+          <Text variant="caption" color="textSecondary" numberOfLines={1} style={styles.addressText}>
+            📍 {item.shippingAddress}
+          </Text>
+        ) : null}
+        <View style={styles.bottomRow}>
+          <Text variant="body" color="textSecondary">
+            Total Amount:
+          </Text>
+          <Text weight="bold" size="md" color="textPrimary">
+            ₹{item.total.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+    ),
+    []
+  );
 
   // Protected View for Unauthenticated Users
   if (!isAuthenticated) {
@@ -101,7 +152,7 @@ export function OrdersScreen() {
 
       <FlatList
         data={orders}
-        keyExtractor={(item) => item.id || (item as any).order_id}
+        keyExtractor={orderKeyExtractor}
         contentContainerStyle={styles.list}
         refreshing={isLoading}
         onRefresh={() => {
@@ -136,54 +187,11 @@ export function OrdersScreen() {
             </View>
           )
         }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.orderIdRow}>
-                <Package size={18} color={colors.primary} />
-                <Text weight="bold" size="md" color="textPrimary" style={styles.orderId}>
-                  {item.id || (item as any).order_id}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.badge,
-                  item.status?.toLowerCase() === 'completed' || item.status === 'Delivered'
-                    ? styles.badgeSuccess
-                    : styles.badgePending,
-                ]}
-              >
-                <Text
-                  weight="bold"
-                  size="xs"
-                  style={
-                    item.status?.toLowerCase() === 'completed' || item.status === 'Delivered'
-                      ? styles.badgeSuccessText
-                      : styles.badgePendingText
-                  }
-                >
-                  {item.status}
-                </Text>
-              </View>
-            </View>
-            <Text variant="caption" color="textMuted" style={styles.date}>
-              {item.date} • {item.itemsCount ?? 1} items
-            </Text>
-            {item.shippingAddress ? (
-              <Text variant="caption" color="textSecondary" numberOfLines={1} style={styles.addressText}>
-                📍 {item.shippingAddress}
-              </Text>
-            ) : null}
-            <View style={styles.bottomRow}>
-              <Text variant="body" color="textSecondary">
-                Total Amount:
-              </Text>
-              <Text weight="bold" size="md" color="textPrimary">
-                ₹{item.total.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-        )}
+        renderItem={renderOrderItem}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
       />
     </View>
   );

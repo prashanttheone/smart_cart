@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -113,23 +113,32 @@ export function TabNavigator() {
   const bottomPadding = Math.max(insets.bottom, 12);
   const tabHeight = 56 + bottomPadding;
 
+  const screenOptions = useMemo<BottomTabNavigationOptions>(
+    () => ({
+      headerShown: false,
+      freezeOnBlur: true,
+      tabBarActiveTintColor: colors.primary,
+      tabBarInactiveTintColor: colors.textMuted,
+      tabBarStyle: [
+        styles.tabBar,
+        {
+          height: tabHeight,
+          paddingBottom: bottomPadding,
+        },
+      ],
+      tabBarItemStyle: styles.tabBarItem,
+      tabBarLabelStyle: styles.tabBarLabel,
+    }),
+    [tabHeight, bottomPadding]
+  );
+
+  const wishlistBadge = useMemo(() => {
+    if (wishlistCount <= 0) return undefined;
+    return wishlistCount > 99 ? '99+' : wishlistCount;
+  }, [wishlistCount]);
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: tabHeight,
-            paddingBottom: bottomPadding,
-          },
-        ],
-        tabBarItemStyle: styles.tabBarItem,
-        tabBarLabelStyle: styles.tabBarLabel,
-      }}
-    >
+    <Tab.Navigator screenOptions={screenOptions}>
       {TAB_ROUTES.map((route) => (
         <Tab.Screen
           key={route.name}
@@ -138,12 +147,7 @@ export function TabNavigator() {
           options={{
             tabBarLabel: route.label,
             tabBarIcon: route.icon,
-            tabBarBadge:
-              route.name === 'Wishlist' && wishlistCount > 0
-                ? wishlistCount > 99
-                  ? '99+'
-                  : wishlistCount
-                : undefined,
+            tabBarBadge: route.name === 'Wishlist' ? wishlistBadge : undefined,
             ...route.options,
           }}
         />

@@ -102,15 +102,17 @@ export const STACK_ROUTES: ReadonlyArray<StackRouteConfig> = [
   },
 ] as const;
 
+const STACK_SCREEN_OPTIONS: NativeStackNavigationOptions = {
+  headerTintColor: colors.primary,
+  headerStyle: { backgroundColor: colors.surface },
+  headerTitleStyle: { fontWeight: '700' },
+};
+
 export function RootStackNavigator() {
   return (
     <Stack.Navigator
       initialRouteName="DrawerRoot"
-      screenOptions={{
-        headerTintColor: colors.primary,
-        headerStyle: { backgroundColor: colors.surface },
-        headerTitleStyle: { fontWeight: '700' },
-      }}
+      screenOptions={STACK_SCREEN_OPTIONS}
     >
       {STACK_ROUTES.map((route) => (
         <Stack.Screen

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   FlatList,
   Image,
@@ -32,77 +32,85 @@ export function CartScreen() {
   const { showToast } = useToastModal();
   const { items, totalAmount, totalCount } = useAppSelector((state) => state.cart);
 
-  const handleProductPress = (item: CartItem) => {
-    navigation.navigate('ProductDetails', {
-      productId: item.id,
-      product: {
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        thumbnail: item.thumbnail,
-        description: '',
-        category: '',
-      },
-    });
-  };
+  const handleProductPress = useCallback(
+    (item: CartItem) => {
+      navigation.navigate('ProductDetails', {
+        productId: item.id,
+        product: {
+          id: item.id,
+          title: item.title,
+          price: item.price,
+          thumbnail: item.thumbnail,
+          description: '',
+          category: '',
+        },
+      });
+    },
+    [navigation]
+  );
 
-  const renderCartItem = ({ item }: { item: CartItem }) => (
-    <View style={styles.itemRow}>
-      {/* Tappable Product Area to open Product Details */}
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => handleProductPress(item)}
-        style={styles.itemTouchable}
-        accessibilityRole="button"
-        accessibilityLabel={`View details for ${item.title}`}
-      >
-        <Image
-          source={{ uri: item.thumbnail }}
-          style={styles.itemImage}
-          resizeMode="contain"
-        />
-        <View style={styles.itemDetails}>
-          <Text style={styles.itemTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-        </View>
-      </TouchableOpacity>
+  const keyExtractor = useCallback((item: CartItem) => item.id.toString(), []);
 
-      <View style={styles.qtyContainer}>
+  const renderCartItem = useCallback(
+    ({ item }: { item: CartItem }) => (
+      <View style={styles.itemRow}>
+        {/* Tappable Product Area to open Product Details */}
         <TouchableOpacity
-          style={styles.qtyBtn}
-          onPress={() =>
-            dispatch(
-              updateQuantity({ id: item.id, quantity: item.quantity - 1 })
-            )
-          }
-          accessibilityLabel="Decrease quantity"
+          activeOpacity={0.7}
+          onPress={() => handleProductPress(item)}
+          style={styles.itemTouchable}
+          accessibilityRole="button"
+          accessibilityLabel={`View details for ${item.title}`}
         >
-          <Text style={styles.qtyBtnText}>-</Text>
+          <Image
+            source={{ uri: item.thumbnail }}
+            style={styles.itemImage}
+            resizeMode="contain"
+          />
+          <View style={styles.itemDetails}>
+            <Text style={styles.itemTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+          </View>
         </TouchableOpacity>
-        <Text style={styles.qtyText}>{item.quantity}</Text>
+
+        <View style={styles.qtyContainer}>
+          <TouchableOpacity
+            style={styles.qtyBtn}
+            onPress={() =>
+              dispatch(
+                updateQuantity({ id: item.id, quantity: item.quantity - 1 })
+              )
+            }
+            accessibilityLabel="Decrease quantity"
+          >
+            <Text style={styles.qtyBtnText}>-</Text>
+          </TouchableOpacity>
+          <Text style={styles.qtyText}>{item.quantity}</Text>
+          <TouchableOpacity
+            style={styles.qtyBtn}
+            onPress={() =>
+              dispatch(
+                updateQuantity({ id: item.id, quantity: item.quantity + 1 })
+              )
+            }
+            accessibilityLabel="Increase quantity"
+          >
+            <Text style={styles.qtyBtnText}>+</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
-          style={styles.qtyBtn}
-          onPress={() =>
-            dispatch(
-              updateQuantity({ id: item.id, quantity: item.quantity + 1 })
-            )
-          }
-          accessibilityLabel="Increase quantity"
+          style={styles.deleteBtn}
+          onPress={() => dispatch(removeFromCart(item.id))}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${item.title} from cart`}
         >
-          <Text style={styles.qtyBtnText}>+</Text>
+          <Text style={styles.deleteText}>✕</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={() => dispatch(removeFromCart(item.id))}
-        accessibilityRole="button"
-        accessibilityLabel={`Remove ${item.title} from cart`}
-      >
-        <Text style={styles.deleteText}>✕</Text>
-      </TouchableOpacity>
-    </View>
+    ),
+    [handleProductPress, dispatch]
   );
 
   return (
@@ -147,9 +155,13 @@ export function CartScreen() {
         <>
           <FlatList
             data={items}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={keyExtractor}
             renderItem={renderCartItem}
             contentContainerStyle={styles.listContent}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+            updateCellsBatchingPeriod={50}
           />
           <View style={styles.footer}>
             <View style={styles.summaryRow}>

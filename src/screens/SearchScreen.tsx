@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FlatList,
   Image,
@@ -10,6 +10,7 @@ import {
   View,
   StatusBar,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -120,9 +121,23 @@ export function SearchScreen() {
   };
 
   // Product press handler
-  const handleProductPress = (product: Product) => {
-    navigation.navigate('ProductDetails', { product });
-  };
+  const handleProductPress = useCallback(
+    (product: Product) => {
+      navigation.navigate('ProductDetails', { product });
+    },
+    [navigation]
+  );
+
+  const productKeyExtractor = useCallback((item: Product) => item.id.toString(), []);
+
+  const renderProductItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <View style={styles.gridItem}>
+        <ProductCard product={item} onPress={handleProductPress} />
+      </View>
+    ),
+    [handleProductPress]
+  );
 
   // Render recent searches chips
   const renderRecentAndPopular = () => (
@@ -317,7 +332,7 @@ export function SearchScreen() {
           ) : (
             <FlatList
               data={searchResults}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={productKeyExtractor}
               numColumns={2}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.resultsGrid}
@@ -330,11 +345,12 @@ export function SearchScreen() {
                   </Text>
                 </View>
               }
-              renderItem={({ item }) => (
-                <View style={styles.gridItem}>
-                  <ProductCard product={item} onPress={handleProductPress} />
-                </View>
-              )}
+              renderItem={renderProductItem}
+              initialNumToRender={6}
+              maxToRenderPerBatch={6}
+              windowSize={5}
+              removeClippedSubviews={Platform.OS === 'android'}
+              updateCellsBatchingPeriod={50}
             />
           )
         ) : (

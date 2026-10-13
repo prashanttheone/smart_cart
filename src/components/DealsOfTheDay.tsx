@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   StyleProp,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { Text } from './ui/Text';
@@ -54,7 +55,7 @@ export interface DealsOfTheDayProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const DealsOfTheDay: React.FC<DealsOfTheDayProps> = ({
+const DealsOfTheDayComponent: React.FC<DealsOfTheDayProps> = ({
   title = 'Deals of the Day',
   limit = 10,
   showSeeAll = false,
@@ -65,7 +66,20 @@ export const DealsOfTheDay: React.FC<DealsOfTheDayProps> = ({
 }) => {
   const { data, isLoading, isError, refetch } = useDealsOfTheDayQuery(limit);
 
-  const products = data?.products || [];
+  const products = useMemo(() => data?.products || [], [data?.products]);
+
+  const keyExtractor = useCallback((item: Product) => String(item.id), []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductCard
+        product={item}
+        onPress={onPressProduct}
+        currencySymbol={currencySymbol}
+      />
+    ),
+    [onPressProduct, currencySymbol]
+  );
 
   return (
     <View style={[styles.container, style]}>
@@ -110,21 +124,21 @@ export const DealsOfTheDay: React.FC<DealsOfTheDayProps> = ({
         <FlatList
           horizontal
           data={products}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => (
-            <ProductCard
-              product={item}
-              onPress={onPressProduct}
-              currencySymbol={currencySymbol}
-            />
-          )}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          initialNumToRender={4}
+          maxToRenderPerBatch={4}
+          windowSize={3}
+          removeClippedSubviews={Platform.OS === 'android'}
         />
       )}
     </View>
   );
 };
+
+export const DealsOfTheDay = React.memo(DealsOfTheDayComponent);
 
 const styles = StyleSheet.create({
   container: {

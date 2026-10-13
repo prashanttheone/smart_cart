@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -16,11 +16,12 @@ import { CategoryList } from '../components/CategoryList';
 import { DealsOfTheDay } from '../components/DealsOfTheDay';
 import { ProductGrid } from '../components/ProductGrid';
 import { Text, useToastModal } from '../components/ui';
+import { Product } from '../services/query/productQueries';
 
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
   NativeStackNavigationProp<RootStackParamList>;
 
-export function HomeScreen() {
+const HomeScreenComponent: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavProp>();
   const { showAlert, showToast } = useToastModal();
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,89 +32,122 @@ export function HomeScreen() {
     address: 'Bangalore, 560001',
   });
 
-  const handleNotificationsPress = () => {
+  const handleNotificationsPress = useCallback(() => {
     showAlert({
       type: 'info',
       title: 'Notifications',
       message: 'You have no unread notifications right now.',
     });
-  };
+  }, [showAlert]);
 
-  const handleScanPress = () => {
+  const handleScanPress = useCallback(() => {
     showAlert({
       type: 'info',
       title: 'Barcode & QR Scanner',
       message: 'Ready to scan product barcode or QR code.',
     });
-  };
+  }, [showAlert]);
 
-  const handleFilterPress = () => {
+  const handleFilterPress = useCallback(() => {
     showToast({
       type: 'info',
       title: 'Filters',
       message: 'Product filters will appear here.',
     });
-  };
+  }, [showToast]);
 
-  // Header content rendered at the top of the paginated product grid
-  const renderListHeader = () => (
-    <>
-      {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
-      <View style={styles.searchContainer}>
-        <HomeSearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onPressBar={() => navigation.navigate('Search', { initialQuery: searchQuery })}
-          onDebouncedSearch={(q) => {
-            setDebouncedQuery(q);
-          }}
-          onClear={() => {
-            setSearchQuery('');
-            setDebouncedQuery('');
-          }}
-          rightActionType="scan"
-          onPressScan={handleScanPress}
-          onPressFilter={handleFilterPress}
+  const handleProductPress = useCallback(
+    (product: Product) => {
+      navigation.navigate('ProductDetails', { product });
+    },
+    [navigation]
+  );
+
+  const handleSelectCategory = useCallback(
+    (slug: string) => {
+      setSelectedCategory(slug);
+      navigation.navigate('CategoryProducts', { category: slug });
+    },
+    [navigation]
+  );
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedQuery('');
+  }, []);
+
+  const handleSearchBarPress = useCallback(() => {
+    navigation.navigate('Search', { initialQuery: searchQuery });
+  }, [navigation, searchQuery]);
+
+  const handleSelectAddress = useCallback((item: { type: string; address: string }) => {
+    setDeliveryLocation({ type: item.type, address: item.address });
+  }, []);
+
+  const handlePressCart = useCallback(() => {
+    navigation.navigate('Cart');
+  }, [navigation]);
+
+  // Header content rendered at the top of the paginated product grid - memoized
+  const listHeaderComponent = useMemo(
+    () => (
+      <>
+        {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
+        <View style={styles.searchContainer}>
+          <HomeSearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onPressBar={handleSearchBarPress}
+            onDebouncedSearch={setDebouncedQuery}
+            onClear={handleClearSearch}
+            rightActionType="scan"
+            onPressScan={handleScanPress}
+            onPressFilter={handleFilterPress}
+          />
+
+          {debouncedQuery.length > 0 && (
+            <View style={styles.searchActivePill}>
+              <Text variant="caption" color="primaryLight">
+                Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Special Offer Banner */}
+        <View style={styles.bannerCard}>
+          <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
+            SPECIAL OFFER
+          </Text>
+          <Text variant="h2" style={styles.bannerTitle}>
+            Big Deals Everyday
+          </Text>
+          <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
+            Up to 50% OFF
+          </Text>
+        </View>
+
+        {/* Dynamic Category Slugs List */}
+        <CategoryList
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleSelectCategory}
         />
 
-        {debouncedQuery.length > 0 && (
-          <View style={styles.searchActivePill}>
-            <Text variant="caption" color="primaryLight">
-              Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Special Offer Banner */}
-      <View style={styles.bannerCard}>
-        <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
-          SPECIAL OFFER
-        </Text>
-        <Text variant="h2" style={styles.bannerTitle}>
-          Big Deals Everyday
-        </Text>
-        <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
-          Up to 50% OFF
-        </Text>
-      </View>
-
-      {/* Dynamic Category Slugs List */}
-      <CategoryList
-        selectedCategory={selectedCategory}
-        onSelectCategory={(slug) => {
-          setSelectedCategory(slug);
-          navigation.navigate('CategoryProducts', { category: slug });
-        }}
-      />
-
-      {/* Deals of the Day Section */}
-      <DealsOfTheDay
-        onPressProduct={(product) =>
-          navigation.navigate('ProductDetails', { product })
-        }
-      />
-    </>
+        {/* Deals of the Day Section */}
+        <DealsOfTheDay onPressProduct={handleProductPress} />
+      </>
+    ),
+    [
+      searchQuery,
+      debouncedQuery,
+      selectedCategory,
+      handleSearchBarPress,
+      handleClearSearch,
+      handleScanPress,
+      handleFilterPress,
+      handleSelectCategory,
+      handleProductPress,
+    ]
   );
 
   return (
@@ -124,25 +158,23 @@ export function HomeScreen() {
         locationType={deliveryLocation.type}
         addressText={deliveryLocation.address}
         hasUnreadNotifications={true}
-        onSelectAddress={(item) =>
-          setDeliveryLocation({ type: item.type, address: item.address })
-        }
+        onSelectAddress={handleSelectAddress}
         onPressNotifications={handleNotificationsPress}
-        onPressCart={() => navigation.navigate('Cart')}
+        onPressCart={handlePressCart}
       />
 
       {/* 2-Column Paginated Grid with Auto Scroll-based Next Limit/Skip Fetching */}
       <ProductGrid
         category={selectedCategory}
         limit={10}
-        onPressProduct={(product) =>
-          navigation.navigate('ProductDetails', { product })
-        }
-        ListHeaderComponent={renderListHeader()}
+        onPressProduct={handleProductPress}
+        ListHeaderComponent={listHeaderComponent}
       />
     </View>
   );
-}
+};
+
+export const HomeScreen = React.memo(HomeScreenComponent);
 
 const styles = StyleSheet.create({
   container: {

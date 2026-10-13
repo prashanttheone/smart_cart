@@ -15,7 +15,7 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { clearCart } from '../store/slices/cartSlice';
 import { selectAddress } from '../store/slices/addressSlice';
 import { selectPaymentMethod } from '../store/slices/checkoutSlice';
-import { placeOrder, createOrderAsync } from '../store/slices/orderSlice';
+import { createOrderAsync } from '../store/slices/orderSlice';
 import { RootStackParamList } from '../navigation/types';
 import { useToastModal } from '../components/ui';
 import { useAuth } from '../services/auth';
@@ -87,11 +87,12 @@ export function CheckoutScreen() {
     return Math.max(0, subtotal + deliveryFee);
   }, [subtotal, deliveryFee]);
 
-  // Log begin checkout event in Firebase Analytics
+  // Log begin checkout event in Firebase Analytics on mount
   useEffect(() => {
     if (cartItems.length > 0) {
       analyticsService.logBeginCheckout(totalPayable, cartItems.length);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle address change selection from dropdown

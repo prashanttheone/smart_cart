@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { Text } from './ui/Text';
@@ -56,7 +57,7 @@ export interface ProductGridProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({
+const ProductGridComponent: React.FC<ProductGridProps> = ({
   category,
   limit = 10,
   title = 'All Products',
@@ -75,40 +76,64 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     refetch,
   } = useInfiniteProductsQuery({ limit, category });
 
-  // Flatten paginated pages into a single products array
-  const products = data?.pages.flatMap((page) => page.products) ?? [];
+  // Flatten paginated pages into a single products array with stable reference
+  const products = useMemo(
+    () => data?.pages.flatMap((page) => page.products) ?? [],
+    [data?.pages]
+  );
   const totalCount = data?.pages[0]?.total;
 
-  const handleEndReached = () => {
+  const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const renderSectionHeader = () => (
-    <>
-      {ListHeaderComponent}
-      <View style={styles.sectionHeader}>
-        <View style={styles.titleRow}>
-          <Text weight="bold" size="xl" color="textPrimary">
-            {category ? `${category.charAt(0).toUpperCase() + category.slice(1)} Products` : title}
-          </Text>
-          {totalCount !== undefined && (
-            <View style={styles.countBadge}>
-              <Text weight="semiBold" size="xs" color="primary">
-                {totalCount} items
-              </Text>
-            </View>
-          )}
-        </View>
-        <Text variant="caption" color="textMuted">
-          Showing {products.length} of {totalCount ?? '...'} products
-        </Text>
-      </View>
-    </>
+  // Stable key extractor using unique product IDs, avoiding array indices
+  const keyExtractor = useCallback((item: Product) => String(item.id), []);
+
+  // Stable renderItem callback to avoid re-instantiating item callbacks on every render
+  const renderItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductCard
+        product={item}
+        flex={true}
+        currencySymbol={currencySymbol}
+        onPress={onPressProduct}
+      />
+    ),
+    [currencySymbol, onPressProduct]
   );
 
-  const renderFooter = () => {
+  // Memoized header element to prevent remounting/re-rendering list header
+  const sectionHeaderElement = useMemo(
+    () => (
+      <>
+        {ListHeaderComponent}
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleRow}>
+            <Text weight="bold" size="xl" color="textPrimary">
+              {category ? `${category.charAt(0).toUpperCase() + category.slice(1)} Products` : title}
+            </Text>
+            {totalCount !== undefined && (
+              <View style={styles.countBadge}>
+                <Text weight="semiBold" size="xs" color="primary">
+                  {totalCount} items
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text variant="caption" color="textMuted">
+            Showing {products.length} of {totalCount ?? '...'} products
+          </Text>
+        </View>
+      </>
+    ),
+    [ListHeaderComponent, category, title, totalCount, products.length]
+  );
+
+  // Memoized footer element
+  const footerElement = useMemo(() => {
     if (isFetchingNextPage) {
       return (
         <View style={styles.footerLoader}>
@@ -130,8 +155,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       );
     }
 
-    return null;
-  };
+    return undefined;
+  }, [isFetchingNextPage, hasNextPage, products.length]);
 
   if (isLoading && products.length === 0) {
     return (
@@ -172,27 +197,28 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   return (
     <FlatList
       data={products}
-      keyExtractor={(item, index) => `${item.id}-${index}`}
+      keyExtractor={keyExtractor}
       numColumns={2}
       columnWrapperStyle={styles.columnWrapper}
-      renderItem={({ item }) => (
-        <ProductCard
-          product={item}
-          flex={true}
-          currencySymbol={currencySymbol}
-          onPress={onPressProduct}
-        />
-      )}
-      ListHeaderComponent={renderSectionHeader}
-      ListFooterComponent={renderFooter}
+      renderItem={renderItem}
+      ListHeaderComponent={sectionHeaderElement}
+      ListFooterComponent={footerElement}
       onEndReached={handleEndReached}
-      onEndReachedThreshold={0.4}
+      onEndReachedThreshold={0.5}
       contentContainerStyle={[styles.listContent, contentContainerStyle]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      // FlatList Virtualization & Batching Performance Tuning:
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={5}
+      removeClippedSubviews={Platform.OS === 'android'}
+      updateCellsBatchingPeriod={50}
     />
   );
 };
+
+export const ProductGrid = React.memo(ProductGridComponent);
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   FlatList,
   Image,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -23,7 +24,7 @@ import {
 import { addToCart } from '../store/slices/cartSlice';
 import { RootStackParamList } from '../navigation/types';
 
-export function WishlistScreen() {
+const WishlistScreenComponent: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
@@ -31,50 +32,59 @@ export function WishlistScreen() {
 
   const { items, totalCount } = useAppSelector((state) => state.wishlist);
 
-  const handleProductPress = (item: WishlistItem) => {
-    navigation.navigate('ProductDetails', {
-      productId: item.id,
-      product: {
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        thumbnail: item.thumbnail,
-        description: '',
-        category: item.category || '',
-        brand: item.brand,
-        rating: item.rating,
-        discountPercentage: item.discountPercentage,
-      },
-    });
-  };
+  const handleProductPress = useCallback(
+    (item: WishlistItem) => {
+      navigation.navigate('ProductDetails', {
+        productId: item.id,
+        product: {
+          id: item.id,
+          title: item.title,
+          price: item.price,
+          thumbnail: item.thumbnail,
+          description: '',
+          category: item.category || '',
+          brand: item.brand,
+          rating: item.rating,
+          discountPercentage: item.discountPercentage,
+        },
+      });
+    },
+    [navigation]
+  );
 
-  const handleRemove = (item: WishlistItem) => {
-    dispatch(removeFromWishlist(item.id));
-    showToast({
-      type: 'info',
-      title: 'Removed from Wishlist',
-      message: `${item.title} removed from saved items.`,
-    });
-  };
+  const handleRemove = useCallback(
+    (item: WishlistItem) => {
+      dispatch(removeFromWishlist(item.id));
+      showToast({
+        type: 'info',
+        title: 'Removed from Wishlist',
+        message: `${item.title} removed from saved items.`,
+      });
+    },
+    [dispatch, showToast]
+  );
 
-  const handleAddToCart = (item: WishlistItem) => {
-    dispatch(
-      addToCart({
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        thumbnail: item.thumbnail,
-        quantity: 1,
-      })
-    );
-    showToast({
-      type: 'success',
-      title: 'Added to Cart',
-      message: `${item.title} moved to your cart.`,
-    });
-  };
+  const handleAddToCart = useCallback(
+    (item: WishlistItem) => {
+      dispatch(
+        addToCart({
+          id: item.id,
+          title: item.title,
+          price: item.price,
+          thumbnail: item.thumbnail,
+          quantity: 1,
+        })
+      );
+      showToast({
+        type: 'success',
+        title: 'Added to Cart',
+        message: `${item.title} moved to your cart.`,
+      });
+    },
+    [dispatch, showToast]
+  );
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     showConfirm({
       type: 'confirm',
       title: 'Clear Wishlist',
@@ -91,9 +101,12 @@ export function WishlistScreen() {
         });
       },
     });
-  };
+  }, [showConfirm, dispatch, showToast]);
 
-  const renderWishlistItem = ({ item }: { item: WishlistItem }) => {
+  const keyExtractor = useCallback((item: WishlistItem) => item.id.toString(), []);
+
+  const renderWishlistItem = useCallback(
+    ({ item }: { item: WishlistItem }) => {
     const discount = item.discountPercentage ? Math.round(item.discountPercentage) : 0;
     const originalPrice =
       discount > 0 ? (item.price * 100) / (100 - discount) : null;
@@ -183,7 +196,7 @@ export function WishlistScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [handleProductPress, handleRemove, handleAddToCart]);
 
   return (
     <View style={styles.container}>
@@ -243,17 +256,24 @@ export function WishlistScreen() {
       ) : (
         <FlatList
           data={items}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={keyExtractor}
           numColumns={2}
           contentContainerStyle={styles.listContent}
           columnWrapperStyle={styles.columnWrapper}
           showsVerticalScrollIndicator={false}
           renderItem={renderWishlistItem}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
+          updateCellsBatchingPeriod={50}
         />
       )}
     </View>
   );
-}
+};
+
+export const WishlistScreen = React.memo(WishlistScreenComponent);
 
 const styles = StyleSheet.create({
   container: {

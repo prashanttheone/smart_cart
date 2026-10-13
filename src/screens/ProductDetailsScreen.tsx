@@ -79,6 +79,7 @@ export function ProductDetailsScreen() {
         category: product.category,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
   // Wishlist state for this product
