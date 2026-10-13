@@ -98,3 +98,43 @@ jest.mock('@react-native-firebase/analytics', () => {
   };
 });
 
+jest.mock('@notifee/react-native', () => {
+  return {
+    __esModule: true,
+    default: {
+      createChannel: jest.fn().mockResolvedValue('smartcart_default_channel'),
+      displayNotification: jest.fn().mockResolvedValue('mock-notification-id'),
+      cancelNotification: jest.fn().mockResolvedValue(undefined),
+      cancelAllNotifications: jest.fn().mockResolvedValue(undefined),
+      getInitialNotification: jest.fn().mockResolvedValue(null),
+      onForegroundEvent: jest.fn().mockReturnValue(jest.fn()),
+      onBackgroundEvent: jest.fn(),
+      requestPermission: jest.fn().mockResolvedValue({ authorizationStatus: 1 }),
+    },
+    createChannel: jest.fn().mockResolvedValue('smartcart_default_channel'),
+    displayNotification: jest.fn().mockResolvedValue('mock-notification-id'),
+    cancelNotification: jest.fn().mockResolvedValue(undefined),
+    cancelAllNotifications: jest.fn().mockResolvedValue(undefined),
+    getInitialNotification: jest.fn().mockResolvedValue(null),
+    onForegroundEvent: jest.fn().mockReturnValue(jest.fn()),
+    onBackgroundEvent: jest.fn(),
+    requestPermission: jest.fn().mockResolvedValue({ authorizationStatus: 1 }),
+    AndroidImportance: {
+      NONE: 0,
+      MIN: 1,
+      LOW: 2,
+      DEFAULT: 3,
+      HIGH: 4,
+    },
+    EventType: {
+      DISMISSED: 0,
+      PRESS: 1,
+      ACTION_PRESS: 2,
+      DELIVERED: 3,
+      APP_BLOCKED: 4,
+      CHANNEL_BLOCKED: 5,
+      CHANNEL_GROUP_BLOCKED: 6,
+    },
+  };
+});
+

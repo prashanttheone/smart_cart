@@ -98,4 +98,20 @@ describe('Auth FCM and Device Info Integration', () => {
 
     postSpy.mockRestore();
   });
+
+  it('displays native system push notifications with channel setup', async () => {
+    await notificationService.setupNotificationChannels();
+
+    const notificationId = await notificationService.displayPushNotification({
+      notification: {
+        title: 'Special Offer',
+        body: 'Flat 50% discount on groceries!',
+      },
+      data: {
+        screen: 'Deals',
+      },
+    });
+
+    expect(notificationId).toBe('mock-notification-id');
+  });
 });

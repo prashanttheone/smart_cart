@@ -14,25 +14,19 @@ import { notificationService, analyticsService } from './src/services/firebase';
 import RootStackNavigator from './src/navigation/RootStackNavigator';
 
 function NotificationListener({ children }: { children: React.ReactNode }) {
-  const { showToast } = useToastModal();
-
   useEffect(() => {
-    // 1. Initial permission check & token acquisition
+    // 1. Setup notification channels, permission check & token acquisition
+    notificationService.setupNotificationChannels();
     notificationService.checkPermission().then((isGranted) => {
       if (isGranted) {
         notificationService.getFCMToken();
       }
     });
 
-    // 2. Foreground push message listener
-    const unsubscribeForeground = notificationService.onForegroundMessage((remoteMessage) => {
-      const title = remoteMessage.notification?.title || 'SmartCart Notification';
-      const body = remoteMessage.notification?.body || 'You have a new update.';
-      showToast({
-        type: 'info',
-        title,
-        message: body,
-      });
+    // 2. Foreground push message listener: Display native OS system push notification banner
+    const unsubscribeForeground = notificationService.onForegroundMessage(async (remoteMessage) => {
+      console.log('[App] Foreground FCM message received, displaying native push notification:', remoteMessage);
+      await notificationService.displayPushNotification(remoteMessage);
     });
 
     // 3. Notification opened from background listener
@@ -40,7 +34,12 @@ function NotificationListener({ children }: { children: React.ReactNode }) {
       console.log('[App] Notification opened from background:', remoteMessage);
     });
 
-    // 4. Initial notification check (launched from quit state)
+    // 4. Native push notification tapped by user
+    const unsubscribePushOpened = notificationService.onPushNotificationOpened((event) => {
+      console.log('[App] Native push notification tapped:', event.detail.notification);
+    });
+
+    // 5. Initial notification check (launched from quit state)
     notificationService.getInitialNotification().then((initialMessage) => {
       if (initialMessage) {
         console.log('[App] Launched from quit state via notification:', initialMessage);
@@ -50,8 +49,9 @@ function NotificationListener({ children }: { children: React.ReactNode }) {
     return () => {
       unsubscribeForeground();
       unsubscribeOpened();
+      unsubscribePushOpened();
     };
-  }, [showToast]);
+  }, []);
 
   return <>{children}</>;
 }

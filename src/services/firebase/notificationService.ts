@@ -14,6 +14,11 @@ import {
   AuthorizationStatus,
   type RemoteMessage,
 } from '@react-native-firebase/messaging';
+import notifee, {
+  AndroidImportance,
+  EventType,
+  type Event as NotifeeEvent,
+} from '@notifee/react-native';
 import { appStorage } from '../storage/asyncStorage';
 import { api } from '../api/apiClient';
 import { ENDPOINTS } from '../../app/lib/EndPoint';
@@ -21,6 +26,12 @@ import { getDeviceInfo } from '../../utils/deviceInfo';
 
 const FCM_TOKEN_STORAGE_KEY = '@smartcart/fcm_token';
 const NOTIFICATIONS_ENABLED_KEY = '@smartcart/notifications_enabled';
+
+export const NOTIFICATION_CHANNELS = {
+  DEFAULT: 'smartcart_default_channel',
+  ORDERS: 'smartcart_orders_channel',
+  PROMOTIONS: 'smartcart_promotions_channel',
+} as const;
 
 export interface PermissionStatusResult {
   granted: boolean;
@@ -87,6 +98,7 @@ export const notificationService = {
 
       if (enabled) {
         await appStorage.setItem(NOTIFICATIONS_ENABLED_KEY, true);
+        await this.setupNotificationChannels();
         const token = await this.getFCMToken();
         // Subscribe to general announcement topic by default
         await this.subscribeToTopic('promotions');
@@ -102,6 +114,114 @@ export const notificationService = {
     } catch (error) {
       console.warn('[NotificationService] Error requesting notification permission:', error);
       return { granted: false, status: 'error' };
+    }
+  },
+
+  /**
+   * Configure high-importance Android Notification Channels for heads-up push notifications
+   */
+  async setupNotificationChannels(): Promise<void> {
+    if (Platform.OS !== 'android') return;
+    try {
+      await notifee.createChannel({
+        id: NOTIFICATION_CHANNELS.DEFAULT,
+        name: 'General Notifications',
+        importance: AndroidImportance.HIGH,
+        sound: 'default',
+        vibration: true,
+      });
+
+      await notifee.createChannel({
+        id: NOTIFICATION_CHANNELS.ORDERS,
+        name: 'Order Updates',
+        importance: AndroidImportance.HIGH,
+        sound: 'default',
+        vibration: true,
+      });
+
+      await notifee.createChannel({
+        id: NOTIFICATION_CHANNELS.PROMOTIONS,
+        name: 'Promotions & Deals',
+        importance: AndroidImportance.DEFAULT,
+        sound: 'default',
+        vibration: true,
+      });
+    } catch (error) {
+      console.warn('[NotificationService] Error creating notification channels:', error);
+    }
+  },
+
+  /**
+   * Display a real native system push notification banner in the device tray / heads-up notification.
+   * Can be triggered from foreground FCM messages, background messages, or local app events.
+   */
+  async displayPushNotification(
+    message: RemoteMessage | { title?: string; body?: string; data?: Record<string, any> }
+  ): Promise<string | null> {
+    try {
+      await this.setupNotificationChannels();
+
+      const title =
+        ('notification' in message && message.notification?.title) ||
+        (message.data?.title as string) ||
+        ('title' in message && (message as any).title) ||
+        'SmartCart';
+
+      const body =
+        ('notification' in message && message.notification?.body) ||
+        (message.data?.body as string) ||
+        ('body' in message && (message as any).body) ||
+        'You have a new update.';
+
+      const channelId =
+        (message.data?.channelId as string) ||
+        NOTIFICATION_CHANNELS.DEFAULT;
+
+      const notificationId = await notifee.displayNotification({
+        title,
+        body,
+        data: message.data || {},
+        android: {
+          channelId,
+          importance: AndroidImportance.HIGH,
+          pressAction: {
+            id: 'default',
+          },
+          sound: 'default',
+          vibrationPattern: [300, 500],
+        },
+        ios: {
+          sound: 'default',
+          foregroundPresentationOptions: {
+            alert: true,
+            badge: true,
+            sound: true,
+          },
+        },
+      });
+
+      console.log('[NotificationService] Displayed native push notification:', notificationId);
+      return notificationId;
+    } catch (error) {
+      console.warn('[NotificationService] Error displaying push notification:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Listen for user tapping on a native system push notification
+   */
+  onPushNotificationOpened(callback: (event: NotifeeEvent) => void): () => void {
+    try {
+      return notifee.onForegroundEvent((event) => {
+        if (event.type === EventType.PRESS) {
+          console.log('[NotificationService] Push notification pressed:', event.detail.notification);
+          callback(event);
+        }
+      });
+    } catch (error) {
+      console.warn('[NotificationService] Error setting up onForegroundEvent:', error);
+      return () => {};
     }
   },
 

@@ -26,5 +26,10 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Default Notification Channel for Firebase Cloud Messaging (Android 8.0+) -->
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="smartcart_default_channel" />
     </application>
 </manifest>
