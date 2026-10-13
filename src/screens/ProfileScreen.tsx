@@ -1,71 +1,58 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { useToastModal } from '../components/ui';
 import { useAuth } from '../services/auth';
-import { appStorage } from '../services/storage/asyncStorage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import {
+  Package,
+  Heart,
+  Settings as SettingsIcon,
+  ChevronRight,
+  LogOut,
+  ShieldCheck,
+} from 'lucide-react-native';
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { showToast, showConfirm } = useToastModal();
   const { user, isAuthenticated, logout: authLogout } = useAuth();
-  const [note, setNote] = useState('');
-  const [savedNote, setSavedNote] = useState<string | null>(null);
 
-  useEffect(() => {
-    appStorage.getItem<string>('@user_note').then((val) => {
-      if (val) setSavedNote(val);
-    });
-  }, []);
-
-  const handleSaveNote = async () => {
-    if (!note.trim()) return;
-    await appStorage.setItem('@user_note', note);
-    setSavedNote(note);
-    setNote('');
-    showToast({
-      type: 'success',
-      title: 'Note Saved',
-      message: 'Saved note successfully to local device storage!',
-    });
-  };
-
-  const handleClearNote = async () => {
+  const handleLogout = () => {
     showConfirm({
       type: 'confirm',
-      title: 'Clear Saved Note',
-      message: 'Are you sure you want to remove your stored note?',
-      confirmText: 'Clear Note',
+      title: 'Log Out',
+      message: 'Are you sure you want to log out of your SmartCart account?',
+      confirmText: 'Log Out',
       confirmVariant: 'danger',
       onConfirm: async () => {
-        await appStorage.removeItem('@user_note');
-        setSavedNote(null);
+        await authLogout();
         showToast({
           type: 'info',
-          title: 'Note Cleared',
-          message: 'Saved note was removed from local storage.',
+          title: 'Logged Out',
+          message: 'You have been logged out of SmartCart.',
         });
       },
     });
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>User Profile</Text>
       </View>
 
-      {/* User Card */}
+      {/* User Information Card */}
       <View style={styles.card}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -75,7 +62,9 @@ export function ProfileScreen() {
           </Text>
         </View>
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{(user?.full_name || user?.name) ?? 'Guest User'}</Text>
+          <Text style={styles.userName}>
+            {(user?.full_name || user?.name) ?? 'Guest User'}
+          </Text>
           <Text style={styles.userEmail}>{user?.email ?? 'Not logged in'}</Text>
 
           {user?.userId && (
@@ -113,38 +102,70 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      {/* AsyncStorage Demo Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>AsyncStorage Demo</Text>
-        <Text style={styles.cardSubtitle}>
-          Test local persistence using @react-native-async-storage/async-storage:
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter a note or test string..."
-          placeholderTextColor={colors.textMuted}
-          value={note}
-          onChangeText={setNote}
-        />
-
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNote}>
-            <Text style={styles.saveBtnText}>Save to Storage</Text>
-          </TouchableOpacity>
-          {savedNote && (
-            <TouchableOpacity style={styles.clearBtn} onPress={handleClearNote}>
-              <Text style={styles.clearBtnText}>Clear</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {savedNote && (
-          <View style={styles.storedBox}>
-            <Text style={styles.storedLabel}>Persisted in AsyncStorage:</Text>
-            <Text style={styles.storedValue}>"{savedNote}"</Text>
+      {/* Account Navigation Menu */}
+      <View style={styles.menuCard}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate('DrawerRoot', {
+              screen: 'MainTabs',
+              params: { screen: 'Orders' },
+            } as any)
+          }
+        >
+          <View style={[styles.menuIconContainer, { backgroundColor: '#EFF6FF' }]}>
+            <Package size={20} color={colors.primary} />
           </View>
-        )}
+          <View style={styles.menuTextCol}>
+            <Text style={styles.menuItemTitle}>My Orders</Text>
+            <Text style={styles.menuItemSubtitle}>Track shipments and view past purchases</Text>
+          </View>
+          <ChevronRight size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <View style={styles.menuDivider} />
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate('DrawerRoot', {
+              screen: 'MainTabs',
+              params: { screen: 'Wishlist' },
+            } as any)
+          }
+        >
+          <View style={[styles.menuIconContainer, { backgroundColor: '#FDF2F8' }]}>
+            <Heart size={20} color="#DB2777" />
+          </View>
+          <View style={styles.menuTextCol}>
+            <Text style={styles.menuItemTitle}>Saved Wishlist</Text>
+            <Text style={styles.menuItemSubtitle}>View products you bookmarked</Text>
+          </View>
+          <ChevronRight size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <View style={styles.menuDivider} />
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate('DrawerRoot', {
+              screen: 'Settings',
+            } as any)
+          }
+        >
+          <View style={[styles.menuIconContainer, { backgroundColor: '#F1F5F9' }]}>
+            <SettingsIcon size={20} color={colors.textPrimary} />
+          </View>
+          <View style={styles.menuTextCol}>
+            <Text style={styles.menuItemTitle}>Settings</Text>
+            <Text style={styles.menuItemSubtitle}>App preferences and account security</Text>
+          </View>
+          <ChevronRight size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       {/* Auth Actions */}
@@ -152,15 +173,10 @@ export function ProfileScreen() {
         {isAuthenticated ? (
           <TouchableOpacity
             style={styles.logoutBtn}
-            onPress={async () => {
-              await authLogout();
-              showToast({
-                type: 'info',
-                title: 'Logged Out',
-                message: 'You have been logged out of SmartCart.',
-              });
-            }}
+            onPress={handleLogout}
+            activeOpacity={0.8}
           >
+            <LogOut size={18} color={colors.danger} style={styles.logoutIcon} />
             <Text style={styles.logoutBtnText}>Log Out</Text>
           </TouchableOpacity>
         ) : (
@@ -168,6 +184,7 @@ export function ProfileScreen() {
             <TouchableOpacity
               style={styles.loginBtn}
               onPress={() => navigation.navigate('Auth', { initialMode: 'login' })}
+              activeOpacity={0.8}
             >
               <Text style={styles.loginBtnText}>Sign In</Text>
             </TouchableOpacity>
@@ -175,13 +192,14 @@ export function ProfileScreen() {
             <TouchableOpacity
               style={styles.registerBtn}
               onPress={() => navigation.navigate('Auth', { initialMode: 'register' })}
+              activeOpacity={0.8}
             >
               <Text style={styles.registerBtnText}>Create Account</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -192,7 +210,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 30,
+    paddingVertical: 14,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -204,9 +222,8 @@ const styles = StyleSheet.create({
   },
   card: {
     margin: 16,
-    marginBottom: 0,
     padding: 16,
-    borderRadius: 14,
+    borderRadius: 16,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -285,78 +302,60 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4338CA',
   },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: colors.surfaceVariant,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.textPrimary,
+  menuCard: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 10,
+    overflow: 'hidden',
   },
-  btnRow: {
+  menuItem: {
     flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
   },
-  saveBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginRight: 8,
+  menuIconContainer: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  saveBtnText: {
-    color: colors.textInverse,
-    fontWeight: '700',
-    fontSize: 13,
+  menuTextCol: {
+    flex: 1,
   },
-  clearBtn: {
-    backgroundColor: colors.surfaceVariant,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  clearBtnText: {
-    color: colors.danger,
+  menuItemTitle: {
+    fontSize: 15,
     fontWeight: '600',
-    fontSize: 13,
+    color: colors.textPrimary,
   },
-  storedBox: {
-    marginTop: 12,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceVariant,
+  menuItemSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
-  storedLabel: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginBottom: 2,
-  },
-  storedValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.secondary,
+  menuDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: 64,
   },
   actionSection: {
     margin: 16,
+    marginTop: 20,
+    marginBottom: 40,
   },
   logoutBtn: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.dangerLight,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: colors.dangerLight,
+  },
+  logoutIcon: {
+    marginRight: 8,
   },
   logoutBtnText: {
     color: colors.danger,
@@ -368,7 +367,7 @@ const styles = StyleSheet.create({
   },
   loginBtn: {
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: colors.primary,
     alignItems: 'center',
   },
@@ -379,7 +378,7 @@ const styles = StyleSheet.create({
   },
   registerBtn: {
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.primary,
