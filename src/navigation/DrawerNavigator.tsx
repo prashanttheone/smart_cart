@@ -72,6 +72,7 @@ export function DrawerNavigator() {
       drawerContent={CustomDrawerContent}
       screenOptions={{
         headerShown: false,
+        swipeEnabled: false,
         drawerActiveTintColor: colors.primary,
         drawerInactiveTintColor: colors.textPrimary,
         drawerActiveBackgroundColor: colors.primaryLight,
@@ -90,9 +91,7 @@ export function DrawerNavigator() {
         name="Orders"
         component={OrdersScreen}
         options={{
-          headerShown: true,
-          headerTintColor: colors.primary,
-          headerStyle,
+          headerShown: false,
           drawerLabel: 'Order History',
           drawerIcon: renderOrdersIcon,
         }}
@@ -101,9 +100,7 @@ export function DrawerNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{
-          headerShown: true,
-          headerTintColor: colors.primary,
-          headerStyle,
+          headerShown: false,
           drawerLabel: 'App Settings',
           drawerIcon: renderSettingsIcon,
         }}

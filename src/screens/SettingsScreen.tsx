@@ -1,12 +1,42 @@
 import React from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+  StatusBar,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { ArrowLeft } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 
 export function SettingsScreen() {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [notifications, setNotifications] = React.useState(true);
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Top Header with Back Navigation */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 14 }]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>Preferences</Text>
 
@@ -40,7 +70,7 @@ export function SettingsScreen() {
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Navigation</Text>
-          <Text style={styles.value}>Stack + Tabs + Drawer</Text>
+          <Text style={styles.value}>Stack + Tabs</Text>
         </View>
       </View>
     </View>
@@ -51,6 +81,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  headerPlaceholder: {
+    width: 36,
   },
   section: {
     margin: 16,
