@@ -35,24 +35,29 @@ export function AuthScreen({ initialMode: propInitialMode }: AuthScreenProps) {
 
   const switchMode = React.useCallback(
     (newMode: 'login' | 'register') => {
-      if (newMode === mode) return;
-      setMode(newMode);
-      Animated.spring(slideAnim, {
-        toValue: newMode === 'login' ? 0 : 1,
-        friction: 9,
-        tension: 65,
-        useNativeDriver: true,
-      }).start();
+      setMode((current) => {
+        if (current === newMode) return current;
+        Animated.spring(slideAnim, {
+          toValue: newMode === 'login' ? 0 : 1,
+          friction: 9,
+          tension: 65,
+          useNativeDriver: true,
+        }).start();
+        return newMode;
+      });
     },
-    [mode, slideAnim]
+    [slideAnim]
   );
 
+  const initialModeTarget = propInitialMode || route.params?.initialMode;
+  const prevInitialModeTargetRef = useRef(initialModeTarget);
+
   useEffect(() => {
-    const target = route.params?.initialMode;
-    if (target && target !== mode) {
-      switchMode(target);
+    if (initialModeTarget && initialModeTarget !== prevInitialModeTargetRef.current) {
+      prevInitialModeTargetRef.current = initialModeTarget;
+      switchMode(initialModeTarget);
     }
-  }, [route.params?.initialMode, mode, switchMode]);
+  }, [initialModeTarget, switchMode]);
 
   const handleSuccess = () => {
     if (navigation.canGoBack()) {
