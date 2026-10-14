@@ -107,103 +107,103 @@ const WishlistScreenComponent: React.FC = () => {
 
   const renderWishlistItem = useCallback(
     ({ item }: { item: WishlistItem }) => {
-    const discount = item.discountPercentage ? Math.round(item.discountPercentage) : 0;
-    const originalPrice =
-      discount > 0 ? (item.price * 100) / (100 - discount) : null;
+      const discount = item.discountPercentage ? Math.round(item.discountPercentage) : 0;
+      const originalPrice =
+        discount > 0 ? (item.price * 100) / (100 - discount) : null;
 
-    return (
-      <TouchableOpacity
-        activeOpacity={0.88}
-        onPress={() => handleProductPress(item)}
-        style={styles.card}
-        accessibilityRole="button"
-        accessibilityLabel={`View ${item.title}`}
-      >
-        {/* Product Image Area with Heart & Discount */}
-        <View style={styles.imageContainer}>
-          {discount > 0 && (
-            <View style={styles.discountBadge}>
-              <Text weight="bold" size="xs" style={styles.discountText}>
-                {discount}% OFF
-              </Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={styles.removeHeartBtn}
-            onPress={() => handleRemove(item)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel={`Remove ${item.title} from wishlist`}
-          >
-            <Heart size={18} color="#EF4444" fill="#EF4444" strokeWidth={1.5} />
-          </TouchableOpacity>
-
-          <Image
-            source={{ uri: item.thumbnail }}
-            style={styles.productImage}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Product Details */}
-        <View style={styles.cardDetails}>
-          <Text weight="semiBold" size="sm" color="textPrimary" numberOfLines={1} style={styles.productTitle}>
-            {item.title}
-          </Text>
-
-          {item.category ? (
-            <Text variant="caption" color="textMuted" numberOfLines={1} style={styles.categoryText}>
-              {item.category.toUpperCase()}
-            </Text>
-          ) : null}
-
-          {/* Price & Rating */}
-          <View style={styles.priceRow}>
-            <View style={styles.priceContainer}>
-              <Text weight="bold" size="base" color="textPrimary">
-                ${item.price.toFixed(2)}
-              </Text>
-              {originalPrice !== null && (
-                <Text variant="caption" color="textMuted" style={styles.originalPrice}>
-                  ${originalPrice.toFixed(2)}
-                </Text>
-              )}
-            </View>
-
-            {item.rating !== undefined && (
-              <View style={styles.ratingBadge}>
-                <Star size={12} color="#F59E0B" fill="#F59E0B" strokeWidth={1} />
-                <Text weight="semiBold" size="xs" color="textPrimary">
-                  {item.rating.toFixed(1)}
+      return (
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => handleProductPress(item)}
+          style={styles.card}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${item.title}`}
+        >
+          {/* Product Image Area with Heart & Discount */}
+          <View style={styles.imageContainer}>
+            {discount > 0 && (
+              <View style={styles.discountBadge}>
+                <Text weight="bold" size="xs" style={styles.discountText}>
+                  {discount}% OFF
                 </Text>
               </View>
             )}
+
+            <TouchableOpacity
+              style={styles.removeHeartBtn}
+              onPress={() => handleRemove(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel={`Remove ${item.title} from wishlist`}
+            >
+              <Heart size={18} color="#EF4444" fill="#EF4444" strokeWidth={1.5} />
+            </TouchableOpacity>
+
+            <Image
+              source={{ uri: item.thumbnail }}
+              style={styles.productImage}
+              resizeMode="contain"
+            />
           </View>
 
-          {/* Add to Cart Button */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => handleAddToCart(item)}
-            style={styles.addToCartBtn}
-            accessibilityRole="button"
-            accessibilityLabel={`Add ${item.title} to cart`}
-          >
-            <ShoppingCart size={15} color="#FFFFFF" strokeWidth={2.2} />
-            <Text weight="bold" size="xs" color="textInverse">
-              Add to Cart
+          {/* Product Details */}
+          <View style={styles.cardDetails}>
+            <Text weight="semiBold" size="sm" color="textPrimary" numberOfLines={1} style={styles.productTitle}>
+              {item.title}
             </Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  }, [handleProductPress, handleRemove, handleAddToCart]);
+
+            {item.category ? (
+              <Text variant="caption" color="textMuted" numberOfLines={1} style={styles.categoryText}>
+                {item.category.toUpperCase()}
+              </Text>
+            ) : null}
+
+            {/* Price & Rating */}
+            <View style={styles.priceRow}>
+              <View style={styles.priceContainer}>
+                <Text weight="bold" size="base" color="textPrimary">
+                  ${item.price.toFixed(2)}
+                </Text>
+                {originalPrice !== null && (
+                  <Text variant="caption" color="textMuted" style={styles.originalPrice}>
+                    ${originalPrice.toFixed(2)}
+                  </Text>
+                )}
+              </View>
+
+              {item.rating !== undefined && (
+                <View style={styles.ratingBadge}>
+                  <Star size={12} color="#F59E0B" fill="#F59E0B" strokeWidth={1} />
+                  <Text weight="semiBold" size="xs" color="textPrimary">
+                    {item.rating.toFixed(1)}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Add to Cart Button */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => handleAddToCart(item)}
+              style={styles.addToCartBtn}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${item.title} to cart`}
+            >
+              <ShoppingCart size={15} color="#FFFFFF" strokeWidth={2.2} />
+              <Text weight="bold" size="xs" color="textInverse">
+                Add to Cart
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      );
+    }, [handleProductPress, handleRemove, handleAddToCart]);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
       {/* Top Safe Area Notch Bar with Pale Shadow Grey Header */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top + 30 }]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
         <View style={styles.headerRow}>
           <View style={styles.headerTitleCol}>
             <View style={styles.titleWithBadge}>
