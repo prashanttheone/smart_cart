@@ -162,7 +162,7 @@ export function CheckoutScreen() {
           message: `Your order #${confirmedOrder.id} of ₹${totalPayable.toFixed(2)} has been confirmed successfully.`,
           confirmText: 'Track Order',
           confirmVariant: 'success',
-          cancelText: 'Continue Shopping',
+          cancelText: 'Continue',
           onConfirm: () => {
             navigation.goBack();
             navigation.navigate('DrawerRoot', {
@@ -200,7 +200,7 @@ export function CheckoutScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* Top Safe Area Notch Bar with Pale Shadow Grey Header */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top + 30 }]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity
             activeOpacity={0.7}
