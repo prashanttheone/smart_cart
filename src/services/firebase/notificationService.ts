@@ -1,22 +1,17 @@
 import { Platform, PermissionsAndroid } from 'react-native';
 import {
   getMessaging,
-  requestPermission,
-  hasPermission,
   getToken,
-  deleteToken,
   onMessage,
   onNotificationOpenedApp,
   onTokenRefresh,
   getInitialNotification,
-  subscribeToTopic,
-  unsubscribeFromTopic,
-  AuthorizationStatus,
   type RemoteMessage,
 } from '@react-native-firebase/messaging';
 import notifee, {
   AndroidImportance,
   EventType,
+  AuthorizationStatus,
   type Event as NotifeeEvent,
 } from '@notifee/react-native';
 import { appStorage } from '../storage/asyncStorage';
@@ -77,34 +72,23 @@ export const notificationService = {
         }
       }
 
-      // 2. Request permission through Firebase Messaging (handles iOS and Android FCM status)
-      const messagingInstance = getMessagingInstance();
-      if (!messagingInstance) {
-        return { granted: false, status: 'error' };
-      }
-
-      const authStatus = await requestPermission(messagingInstance, {
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        provisional: false,
-        sound: true,
-      });
+      // 2. Request permission through Notifee (handles iOS and Android notification permission settings)
+      const settings = await notifee.requestPermission();
 
       const enabled =
-        authStatus === AuthorizationStatus.AUTHORIZED ||
-        authStatus === AuthorizationStatus.PROVISIONAL;
+        settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+        settings.authorizationStatus === AuthorizationStatus.PROVISIONAL;
 
       if (enabled) {
         await appStorage.setItem(NOTIFICATIONS_ENABLED_KEY, true);
         await this.setupNotificationChannels();
         const token = await this.getFCMToken();
-        // Subscribe to general announcement topic by default
-        await this.subscribeToTopic('promotions');
         return {
           granted: true,
-          status: authStatus === AuthorizationStatus.AUTHORIZED ? 'authorized' : 'provisional',
+          status:
+            settings.authorizationStatus === AuthorizationStatus.AUTHORIZED
+              ? 'authorized'
+              : 'provisional',
           token,
         };
       } else {
@@ -237,13 +221,10 @@ export const notificationService = {
         if (!hasAndroidPermission) return false;
       }
 
-      const messagingInstance = getMessagingInstance();
-      if (!messagingInstance) return false;
-
-      const authStatus = await hasPermission(messagingInstance);
+      const settings = await notifee.getNotificationSettings();
       return (
-        authStatus === AuthorizationStatus.AUTHORIZED ||
-        authStatus === AuthorizationStatus.PROVISIONAL
+        settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+        settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
       );
     } catch (error) {
       console.warn('[NotificationService] Error checking permission:', error);
@@ -325,7 +306,6 @@ export const notificationService = {
     }
   },
 
-
   /**
    * Listen for token refresh events and update storage
    */
@@ -393,58 +373,6 @@ export const notificationService = {
   },
 
   /**
-   * Subscribe to notification topic (e.g. "promotions", "orders")
-   */
-  async subscribeToTopic(topic: string): Promise<boolean> {
-    try {
-      const messagingInstance = getMessagingInstance();
-      if (!messagingInstance) return false;
-
-      await subscribeToTopic(messagingInstance, topic);
-      console.log(`[NotificationService] Subscribed to topic: ${topic}`);
-      return true;
-    } catch (error) {
-      console.warn(`[NotificationService] Error subscribing to topic ${topic}:`, error);
-      return false;
-    }
-  },
-
-  /**
-   * Unsubscribe from notification topic
-   */
-  async unsubscribeFromTopic(topic: string): Promise<boolean> {
-    try {
-      const messagingInstance = getMessagingInstance();
-      if (!messagingInstance) return false;
-
-      await unsubscribeFromTopic(messagingInstance, topic);
-      console.log(`[NotificationService] Unsubscribed from topic: ${topic}`);
-      return true;
-    } catch (error) {
-      console.warn(`[NotificationService] Error unsubscribing from topic ${topic}:`, error);
-      return false;
-    }
-  },
-
-  /**
-   * Delete FCM token (e.g. on account logout)
-   */
-  async deleteToken(): Promise<boolean> {
-    try {
-      const messagingInstance = getMessagingInstance();
-      if (messagingInstance) {
-        await deleteToken(messagingInstance);
-      }
-      await appStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
-      console.log('[NotificationService] FCM token deleted');
-      return true;
-    } catch (error) {
-      console.warn('[NotificationService] Error deleting token:', error);
-      return false;
-    }
-  },
-
-  /**
    * Check if user notification preference is enabled (from storage & system)
    */
   async isNotificationPreferenceEnabled(): Promise<boolean> {
@@ -460,16 +388,11 @@ export const notificationService = {
   },
 
   /**
-   * Set user push notification preference and handle topic subscription
+   * Set user push notification preference
    */
   async setNotificationPreference(enabled: boolean): Promise<boolean> {
     try {
       await appStorage.setItem(NOTIFICATIONS_ENABLED_KEY, enabled);
-      if (!enabled) {
-        await this.unsubscribeFromTopic('promotions');
-      } else {
-        await this.subscribeToTopic('promotions');
-      }
       return true;
     } catch (error) {
       console.warn('[NotificationService] Error setting notification preference:', error);

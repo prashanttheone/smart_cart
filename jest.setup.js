@@ -99,18 +99,7 @@ jest.mock('@react-native-firebase/analytics', () => {
 });
 
 jest.mock('@notifee/react-native', () => {
-  return {
-    __esModule: true,
-    default: {
-      createChannel: jest.fn().mockResolvedValue('smartcart_default_channel'),
-      displayNotification: jest.fn().mockResolvedValue('mock-notification-id'),
-      cancelNotification: jest.fn().mockResolvedValue(undefined),
-      cancelAllNotifications: jest.fn().mockResolvedValue(undefined),
-      getInitialNotification: jest.fn().mockResolvedValue(null),
-      onForegroundEvent: jest.fn().mockReturnValue(jest.fn()),
-      onBackgroundEvent: jest.fn(),
-      requestPermission: jest.fn().mockResolvedValue({ authorizationStatus: 1 }),
-    },
+  const notifeeMock = {
     createChannel: jest.fn().mockResolvedValue('smartcart_default_channel'),
     displayNotification: jest.fn().mockResolvedValue('mock-notification-id'),
     cancelNotification: jest.fn().mockResolvedValue(undefined),
@@ -119,12 +108,24 @@ jest.mock('@notifee/react-native', () => {
     onForegroundEvent: jest.fn().mockReturnValue(jest.fn()),
     onBackgroundEvent: jest.fn(),
     requestPermission: jest.fn().mockResolvedValue({ authorizationStatus: 1 }),
+    getNotificationSettings: jest.fn().mockResolvedValue({ authorizationStatus: 1 }),
+  };
+  return {
+    __esModule: true,
+    default: notifeeMock,
+    ...notifeeMock,
     AndroidImportance: {
       NONE: 0,
       MIN: 1,
       LOW: 2,
       DEFAULT: 3,
       HIGH: 4,
+    },
+    AuthorizationStatus: {
+      NOT_DETERMINED: -1,
+      DENIED: 0,
+      AUTHORIZED: 1,
+      PROVISIONAL: 2,
     },
     EventType: {
       DISMISSED: 0,

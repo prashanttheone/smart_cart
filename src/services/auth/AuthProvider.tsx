@@ -278,9 +278,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLocalUser(null);
     dispatch(logoutRedux());
 
-    // Clear Firebase Analytics & Notification token
+    // Clear Firebase Analytics
     analyticsService.setUserId(null);
-    notificationService.deleteToken();
   }, [dispatch]);
 
   const isAuthenticated = Boolean(
