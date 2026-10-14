@@ -6,6 +6,7 @@ import {
   View,
   Platform,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { useToastModal } from '../components/ui';
@@ -47,6 +48,8 @@ export function ProfileScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
+      <StatusBar barStyle="dark-content" />
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>User Profile</Text>
       </View>

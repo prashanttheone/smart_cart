@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -98,6 +99,8 @@ const CategoriesScreenComponent: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Top Header */}
+      <StatusBar barStyle="dark-content" />
+
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.titleRow}>
           <View style={styles.titleIconBox}>

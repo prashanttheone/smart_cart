@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -90,6 +91,7 @@ export function OrdersScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.container}>
+        <StatusBar barStyle="dark-content" />
         <View style={styles.header}>
           <Text weight="bold" size="xl" color="textPrimary">
             My Orders
@@ -133,6 +135,7 @@ export function OrdersScreen() {
   // Authenticated View
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
           <Text weight="bold" size="xl" color="textPrimary">
