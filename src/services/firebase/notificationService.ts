@@ -325,28 +325,6 @@ export const notificationService = {
     }
   },
 
-  /**
-   * Unregister FCM token from backend server
-   */
-  async unregisterTokenFromServer(tokenToRemove?: string | null): Promise<boolean> {
-    try {
-      const activeToken = tokenToRemove || (await this.getStoredToken());
-      if (!activeToken) return false;
-
-      const fcmUrl = ENDPOINTS.AUTH.buildUrl(ENDPOINTS.AUTH.FCM_TOKEN);
-      await api.delete(fcmUrl, {
-        data: {
-          fcm_token: activeToken,
-          fcmToken: activeToken,
-        },
-      });
-      console.log('[NotificationService] Unregistered FCM token from server successfully');
-      return true;
-    } catch (error) {
-      console.warn('[NotificationService] Error unregistering FCM token from server:', error);
-      return false;
-    }
-  },
 
   /**
    * Listen for token refresh events and update storage
@@ -453,10 +431,6 @@ export const notificationService = {
    */
   async deleteToken(): Promise<boolean> {
     try {
-      const currentToken = await this.getStoredToken();
-      if (currentToken) {
-        await this.unregisterTokenFromServer(currentToken).catch(() => {});
-      }
       const messagingInstance = getMessagingInstance();
       if (messagingInstance) {
         await deleteToken(messagingInstance);

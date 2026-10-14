@@ -273,15 +273,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout handler
   const logout = useCallback(async () => {
-    try {
-      const currentToken = await notificationService.getStoredToken();
-      if (currentToken) {
-        await notificationService.unregisterTokenFromServer(currentToken).catch(() => {});
-      }
-    } catch (e) {
-      console.warn('[AuthProvider] Failed to unregister FCM token during logout:', e);
-    }
-
     await keychainStorage.clearAuth();
     setLocalToken(null);
     setLocalUser(null);

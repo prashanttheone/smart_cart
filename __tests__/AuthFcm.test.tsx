@@ -114,4 +114,36 @@ describe('Auth FCM and Device Info Integration', () => {
 
     expect(notificationId).toBe('mock-notification-id');
   });
+
+  it('does not trigger HTTP DELETE on /api/auth/fcm-token when logging out or deleting token', async () => {
+    const deleteSpy = jest.spyOn(api, 'delete');
+
+    // 1. Calling deleteToken directly should clear local state without hitting DELETE endpoint
+    await notificationService.deleteToken();
+    expect(deleteSpy).not.toHaveBeenCalled();
+
+    // 2. Calling logout should also not trigger DELETE endpoint
+    let authContext: any;
+    function ConsumerComponent() {
+      authContext = useAuth();
+      return null;
+    }
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <Provider store={store}>
+          <AuthProvider>
+            <ConsumerComponent />
+          </AuthProvider>
+        </Provider>
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await authContext.logout();
+    });
+
+    expect(deleteSpy).not.toHaveBeenCalled();
+    deleteSpy.mockRestore();
+  });
 });
