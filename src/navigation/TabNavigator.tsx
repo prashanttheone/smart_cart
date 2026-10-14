@@ -107,6 +107,27 @@ export const TAB_ROUTES: ReadonlyArray<TabRouteConfig> = [
   },
 ] as const;
 
+const STATIC_TAB_OPTIONS: Record<string, BottomTabNavigationOptions> = {
+  Home: {
+    tabBarLabel: 'Home',
+    tabBarIcon: createTabIcon('Home'),
+  },
+  Categories: {
+    tabBarLabel: 'Categories',
+    tabBarIcon: createTabIcon('Categories'),
+  },
+  Orders: {
+    tabBarLabel: 'Orders',
+    tabBarIcon: createTabIcon('Orders'),
+  },
+  Profile: {
+    tabBarLabel: 'Profile',
+    tabBarIcon: createTabIcon('Profile'),
+  },
+};
+
+const wishlistTabIcon = createTabIcon('Wishlist');
+
 export function TabNavigator() {
   const insets = useSafeAreaInsets();
   const wishlistCount = useAppSelector((state) => state.wishlist.totalCount);
@@ -137,6 +158,15 @@ export function TabNavigator() {
     return wishlistCount > 99 ? '99+' : wishlistCount;
   }, [wishlistCount]);
 
+  const wishlistOptions = useMemo<BottomTabNavigationOptions>(
+    () => ({
+      tabBarLabel: 'Wishlist',
+      tabBarIcon: wishlistTabIcon,
+      tabBarBadge: wishlistBadge,
+    }),
+    [wishlistBadge]
+  );
+
   return (
     <Tab.Navigator screenOptions={screenOptions}>
       {TAB_ROUTES.map((route) => (
@@ -144,12 +174,7 @@ export function TabNavigator() {
           key={route.name}
           name={route.name}
           component={route.component}
-          options={{
-            tabBarLabel: route.label,
-            tabBarIcon: route.icon,
-            tabBarBadge: route.name === 'Wishlist' ? wishlistBadge : undefined,
-            ...route.options,
-          }}
+          options={route.name === 'Wishlist' ? wishlistOptions : STATIC_TAB_OPTIONS[route.name]}
         />
       ))}
     </Tab.Navigator>

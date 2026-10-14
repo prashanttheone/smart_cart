@@ -29,7 +29,7 @@ export interface AddressBottomSheetProps {
   onAddNewAddress?: () => void;
 }
 
-export function AddressBottomSheet({
+function AddressBottomSheetComponent({
   visible,
   onClose,
   addresses,
@@ -45,6 +45,10 @@ export function AddressBottomSheet({
       setTempSelectedId(selectedAddressId);
     }
   }, [visible, selectedAddressId]);
+
+  if (!visible) {
+    return null;
+  }
 
   const handleConfirm = () => {
     const selected = addresses.find((a) => a.id === tempSelectedId);
@@ -421,4 +425,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const AddressBottomSheet = React.memo(AddressBottomSheetComponent);
 export default AddressBottomSheet;

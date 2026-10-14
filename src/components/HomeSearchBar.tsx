@@ -87,7 +87,7 @@ export interface HomeSearchBarProps
   containerStyle?: StyleProp<ViewStyle>;
 }
 
-export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
+const HomeSearchBarComponent: React.FC<HomeSearchBarProps> = ({
   value: controlledValue,
   defaultValue = '',
   placeholder = 'Search products, brands...',
@@ -326,4 +326,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const HomeSearchBar = React.memo(HomeSearchBarComponent);
 export default HomeSearchBar;

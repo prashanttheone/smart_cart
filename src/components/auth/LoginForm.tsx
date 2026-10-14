@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -17,7 +17,7 @@ export interface LoginFormProps {
   onSwitchToRegister?: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({
+const LoginFormComponent: React.FC<LoginFormProps> = ({
   onSuccess,
   onSwitchToRegister,
 }) => {
@@ -33,6 +33,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   // Form validation errors
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  const handleEmailChange = useCallback((text: string) => {
+    setEmail(text);
+    setEmailError((prev) => (prev ? '' : prev));
+  }, []);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    setPassword(text);
+    setPasswordError((prev) => (prev ? '' : prev));
+  }, []);
+
+  const emailLeftIcon = useMemo(
+    () => <Mail size={18} color={emailError ? colors.danger : colors.textSecondary} />,
+    [emailError]
+  );
+
+  const passwordLeftIcon = useMemo(
+    () => <Lock size={18} color={passwordError ? colors.danger : colors.textSecondary} />,
+    [passwordError]
+  );
 
   const validate = (): boolean => {
     let isValid = true;
@@ -94,12 +114,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         label="Email address"
         placeholder="Enter your email"
         value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          if (emailError) setEmailError('');
-        }}
+        onChangeText={handleEmailChange}
         error={emailError}
-        leftIcon={<Mail size={18} color={emailError ? colors.danger : colors.textSecondary} />}
+        leftIcon={emailLeftIcon}
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
@@ -115,12 +132,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           label="Password"
           placeholder="Enter your password"
           value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            if (passwordError) setPasswordError('');
-          }}
+          onChangeText={handlePasswordChange}
           error={passwordError}
-          leftIcon={<Lock size={18} color={passwordError ? colors.danger : colors.textSecondary} />}
+          leftIcon={passwordLeftIcon}
           isPassword={true}
           autoCapitalize="none"
           autoCorrect={false}
@@ -210,4 +224,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const LoginForm = React.memo(LoginFormComponent);
 export default LoginForm;

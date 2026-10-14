@@ -39,35 +39,21 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     state.wishlist.items.some((item) => item.id === product.id)
   );
 
-  const discount = useMemo(
-    () => (product.discountPercentage ? Math.round(product.discountPercentage) : 0),
-    [product.discountPercentage]
-  );
-
-  const originalPrice = useMemo(
-    () => (discount > 0 ? (product.price * 100) / (100 - discount) : null),
-    [discount, product.price]
-  );
-
-  const formattedPrice = useMemo(
-    () =>
-      typeof product.price === 'number'
-        ? product.price % 1 === 0
-          ? product.price.toString()
-          : product.price.toFixed(2)
-        : product.price,
-    [product.price]
-  );
-
-  const formattedOriginalPrice = useMemo(
-    () =>
-      originalPrice !== null
-        ? originalPrice % 1 === 0
-          ? Math.round(originalPrice).toString()
-          : originalPrice.toFixed(2)
-        : null,
-    [originalPrice]
-  );
+  // Fast scalar computations without per-card hook allocation overhead
+  const discount = product.discountPercentage ? Math.round(product.discountPercentage) : 0;
+  const originalPrice = discount > 0 ? (product.price * 100) / (100 - discount) : null;
+  const formattedPrice =
+    typeof product.price === 'number'
+      ? product.price % 1 === 0
+        ? product.price.toString()
+        : product.price.toFixed(2)
+      : product.price;
+  const formattedOriginalPrice =
+    originalPrice !== null
+      ? originalPrice % 1 === 0
+        ? Math.round(originalPrice).toString()
+        : originalPrice.toFixed(2)
+      : null;
 
   const handleAddToCart = useCallback(() => {
     if (onAddToCart) {
@@ -104,23 +90,12 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     onPress?.(product);
   }, [onPress, product]);
 
-  const formattedSubtitle = useMemo(
-    () =>
-      product.weight && product.weight > 0
-        ? `${product.weight} kg`
-        : product.brand || product.category,
-    [product.weight, product.brand, product.category]
-  );
-
-  const formattedRating = useMemo(
-    () => (product.rating ? product.rating.toFixed(1) : '4.5'),
-    [product.rating]
-  );
-
-  const reviewsCount = useMemo(
-    () => (product.reviews?.length ? `${product.reviews.length * 400}+` : '1.2k'),
-    [product.reviews]
-  );
+  const formattedSubtitle =
+    product.weight && product.weight > 0
+      ? `${product.weight} kg`
+      : product.brand || product.category;
+  const formattedRating = product.rating ? product.rating.toFixed(1) : '4.5';
+  const reviewsCount = product.reviews?.length ? `${product.reviews.length * 400}+` : '1.2k';
 
   return (
     <TouchableOpacity
@@ -219,7 +194,21 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   );
 };
 
-export const ProductCard = React.memo(ProductCardComponent);
+export const ProductCard = React.memo(
+  ProductCardComponent,
+  (prev, next) =>
+    prev.product.id === next.product.id &&
+    prev.product.price === next.product.price &&
+    prev.product.title === next.product.title &&
+    prev.product.thumbnail === next.product.thumbnail &&
+    prev.product.discountPercentage === next.product.discountPercentage &&
+    prev.product.rating === next.product.rating &&
+    prev.flex === next.flex &&
+    prev.cardWidth === next.cardWidth &&
+    prev.currencySymbol === next.currencySymbol &&
+    prev.onPress === next.onPress &&
+    prev.onAddToCart === next.onAddToCart
+);
 
 const styles = StyleSheet.create({
   card: {

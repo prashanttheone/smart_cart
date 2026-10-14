@@ -21,11 +21,46 @@ import { Product } from '../services/query/productQueries';
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
   NativeStackNavigationProp<RootStackParamList>;
 
+const HomeSearchSection: React.FC<{
+  onPressBar: () => void;
+  onPressScan: () => void;
+  onPressFilter: () => void;
+}> = React.memo(({ onPressBar, onPressScan, onPressFilter }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedQuery('');
+  }, []);
+
+  return (
+    <View style={styles.searchContainer}>
+      <HomeSearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        onPressBar={onPressBar}
+        onDebouncedSearch={setDebouncedQuery}
+        onClear={handleClearSearch}
+        rightActionType="scan"
+        onPressScan={onPressScan}
+        onPressFilter={onPressFilter}
+      />
+
+      {debouncedQuery.length > 0 && (
+        <View style={styles.searchActivePill}>
+          <Text variant="caption" color="primaryLight">
+            Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+});
+
 const HomeScreenComponent: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavProp>();
   const { showAlert, showToast } = useToastModal();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [deliveryLocation, setDeliveryLocation] = useState({
     type: 'Home',
@@ -71,14 +106,9 @@ const HomeScreenComponent: React.FC = () => {
     [navigation]
   );
 
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
-    setDebouncedQuery('');
-  }, []);
-
   const handleSearchBarPress = useCallback(() => {
-    navigation.navigate('Search', { initialQuery: searchQuery });
-  }, [navigation, searchQuery]);
+    navigation.navigate('Search', { initialQuery: '' });
+  }, [navigation]);
 
   const handleSelectAddress = useCallback((item: { type: string; address: string }) => {
     setDeliveryLocation({ type: item.type, address: item.address });
@@ -93,26 +123,11 @@ const HomeScreenComponent: React.FC = () => {
     () => (
       <>
         {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
-        <View style={styles.searchContainer}>
-          <HomeSearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onPressBar={handleSearchBarPress}
-            onDebouncedSearch={setDebouncedQuery}
-            onClear={handleClearSearch}
-            rightActionType="scan"
-            onPressScan={handleScanPress}
-            onPressFilter={handleFilterPress}
-          />
-
-          {debouncedQuery.length > 0 && (
-            <View style={styles.searchActivePill}>
-              <Text variant="caption" color="primaryLight">
-                Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
-              </Text>
-            </View>
-          )}
-        </View>
+        <HomeSearchSection
+          onPressBar={handleSearchBarPress}
+          onPressScan={handleScanPress}
+          onPressFilter={handleFilterPress}
+        />
 
         {/* Special Offer Banner */}
         <View style={styles.bannerCard}>
@@ -138,11 +153,8 @@ const HomeScreenComponent: React.FC = () => {
       </>
     ),
     [
-      searchQuery,
-      debouncedQuery,
       selectedCategory,
       handleSearchBarPress,
-      handleClearSearch,
       handleScanPress,
       handleFilterPress,
       handleSelectCategory,

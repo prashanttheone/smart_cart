@@ -28,7 +28,7 @@ export interface PaymentMethodBottomSheetProps {
   onSelectPaymentMethod: (method: PaymentMethod) => void;
 }
 
-export function PaymentMethodBottomSheet({
+function PaymentMethodBottomSheetComponent({
   visible,
   onClose,
   paymentMethods,
@@ -43,6 +43,10 @@ export function PaymentMethodBottomSheet({
       setTempSelectedId(selectedPaymentMethodId);
     }
   }, [visible, selectedPaymentMethodId]);
+
+  if (!visible) {
+    return null;
+  }
 
   const handleConfirm = () => {
     const selected = paymentMethods.find((p) => p.id === tempSelectedId);
@@ -394,4 +398,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export const PaymentMethodBottomSheet = React.memo(PaymentMethodBottomSheetComponent);
 export default PaymentMethodBottomSheet;

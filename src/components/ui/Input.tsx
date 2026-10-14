@@ -36,7 +36,7 @@ export interface InputProps extends RNTextInputProps {
   isRequired?: boolean;
 }
 
-export const Input = forwardRef<InputRef, InputProps>(
+const InputComponent = forwardRef<InputRef, InputProps>(
   (
     {
       label,
@@ -193,8 +193,6 @@ export const Input = forwardRef<InputRef, InputProps>(
   }
 );
 
-Input.displayName = 'Input';
-
 const styles = StyleSheet.create({
   container: {
     width: '100%',
@@ -274,4 +272,6 @@ const styles = StyleSheet.create({
   },
 });
 
+export const Input = React.memo(InputComponent);
+(Input as any).displayName = 'Input';
 export default Input;

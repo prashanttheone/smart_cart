@@ -62,7 +62,16 @@ export function SearchScreen() {
   // Local search query
   const initialQuery = route.params?.initialQuery || '';
   const [inputText, setInputText] = useState(initialQuery);
+  const [debouncedInputText, setDebouncedInputText] = useState(initialQuery);
   const [submittedQuery, setSubmittedQuery] = useState(initialQuery);
+
+  // Debounce input for suggestions to avoid network thrashing on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedInputText(inputText);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [inputText]);
 
   // Load recent searches on mount
   useEffect(() => {
@@ -81,7 +90,7 @@ export function SearchScreen() {
 
   // TanStack queries
   const { data: suggestionsData, isFetching: isFetchingSuggestions } =
-    useSearchSuggestionsQuery(inputText);
+    useSearchSuggestionsQuery(debouncedInputText);
 
   const {
     data: searchResultsData,
@@ -99,6 +108,7 @@ export function SearchScreen() {
 
     Keyboard.dismiss();
     setInputText(trimmed);
+    setDebouncedInputText(trimmed);
     setSubmittedQuery(trimmed);
     dispatch(setQuery(trimmed));
     dispatch(saveRecentSearch(trimmed));
@@ -108,6 +118,7 @@ export function SearchScreen() {
   const handleSelectSuggestion = (suggestion: Product) => {
     Keyboard.dismiss();
     setInputText(suggestion.title);
+    setDebouncedInputText(suggestion.title);
     setSubmittedQuery(suggestion.title);
     dispatch(saveRecentSearch(suggestion.title));
   };
@@ -115,6 +126,7 @@ export function SearchScreen() {
   // Clear search input
   const handleClearInput = () => {
     setInputText('');
+    setDebouncedInputText('');
     setSubmittedQuery('');
     dispatch(setQuery(''));
     inputRef.current?.focus();
