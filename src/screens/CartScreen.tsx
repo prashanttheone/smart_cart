@@ -23,6 +23,7 @@ import {
 import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../services/auth';
 import { useToastModal } from '../components/ui';
+import { analyticsService } from '../services/firebase';
 
 export function CartScreen() {
   const insets = useSafeAreaInsets();
@@ -180,6 +181,7 @@ export function CartScreen() {
                   navigation.navigate('Auth', { initialMode: 'login' });
                   return;
                 }
+                analyticsService.logBeginCheckout(totalAmount, items.length);
                 navigation.navigate('Checkout');
               }}
               activeOpacity={0.8}

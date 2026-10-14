@@ -84,6 +84,14 @@ jest.mock('@react-native-firebase/analytics', () => {
     logScreenView: jest.fn().mockResolvedValue(undefined),
     logLogin: jest.fn().mockResolvedValue(undefined),
     logSignUp: jest.fn().mockResolvedValue(undefined),
+    setAnalyticsCollectionEnabled: jest.fn().mockResolvedValue(undefined),
+    logViewItem: jest.fn().mockResolvedValue(undefined),
+    logAddToCart: jest.fn().mockResolvedValue(undefined),
+    logAddToWishlist: jest.fn().mockResolvedValue(undefined),
+    logRemoveFromCart: jest.fn().mockResolvedValue(undefined),
+    logBeginCheckout: jest.fn().mockResolvedValue(undefined),
+    logPurchase: jest.fn().mockResolvedValue(undefined),
+    logSearch: jest.fn().mockResolvedValue(undefined),
   });
   return {
     __esModule: true,
@@ -95,6 +103,14 @@ jest.mock('@react-native-firebase/analytics', () => {
     logScreenView: jest.fn().mockResolvedValue(undefined),
     logLogin: jest.fn().mockResolvedValue(undefined),
     logSignUp: jest.fn().mockResolvedValue(undefined),
+    setAnalyticsCollectionEnabled: jest.fn().mockResolvedValue(undefined),
+    logViewItem: jest.fn().mockResolvedValue(undefined),
+    logAddToCart: jest.fn().mockResolvedValue(undefined),
+    logAddToWishlist: jest.fn().mockResolvedValue(undefined),
+    logRemoveFromCart: jest.fn().mockResolvedValue(undefined),
+    logBeginCheckout: jest.fn().mockResolvedValue(undefined),
+    logPurchase: jest.fn().mockResolvedValue(undefined),
+    logSearch: jest.fn().mockResolvedValue(undefined),
   };
 });
 

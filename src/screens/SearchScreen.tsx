@@ -42,6 +42,7 @@ import {
 } from '../services/query/productQueries';
 import { highlightSearchMatch } from '../utils/searchUtils';
 import { ProductCard } from '../components/ProductCard';
+import { analyticsService } from '../services/firebase';
 
 type SearchScreenRouteProp = RouteProp<RootStackParamList, 'Search'>;
 type SearchScreenNavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -112,6 +113,7 @@ export function SearchScreen() {
     setSubmittedQuery(trimmed);
     dispatch(setQuery(trimmed));
     dispatch(saveRecentSearch(trimmed));
+    analyticsService.logSearch(trimmed);
   };
 
   // Select suggestion item

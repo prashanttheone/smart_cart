@@ -4,8 +4,10 @@ import {
   logScreenView,
   setUserId,
   setUserProperty,
+  setAnalyticsCollectionEnabled,
   logViewItem,
   logAddToCart,
+  logAddToWishlist,
   logRemoveFromCart,
   logBeginCheckout,
   logPurchase,
@@ -29,6 +31,20 @@ function getAnalyticsInstance() {
  */
 export const analyticsService = {
   /**
+   * Initialize analytics and ensure collection is explicitly enabled
+   */
+  async init(): Promise<void> {
+    try {
+      const analytics = getAnalyticsInstance();
+      if (!analytics) return;
+      await setAnalyticsCollectionEnabled(analytics, true);
+      console.log('[AnalyticsService] Initialized & collection enabled');
+    } catch (error) {
+      console.warn('[AnalyticsService] Failed to enable analytics collection:', error);
+    }
+  },
+
+  /**
    * Log a custom analytics event with optional key-value parameters
    */
   async logEvent(name: string, params: Record<string, any> = {}): Promise<void> {
@@ -36,6 +52,7 @@ export const analyticsService = {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
       await logEvent(analytics, name as any, params);
+      console.log(`[AnalyticsService] Logged event "${name}":`, params);
     } catch (error) {
       console.warn(`[AnalyticsService] Failed to log event "${name}":`, error);
     }
@@ -52,6 +69,7 @@ export const analyticsService = {
         screen_name: screenName,
         screen_class: screenClass || screenName,
       });
+      console.log(`[AnalyticsService] Logged screen_view: "${screenName}"`);
     } catch (error) {
       console.warn(`[AnalyticsService] Failed to log screen view "${screenName}":`, error);
     }
@@ -65,6 +83,7 @@ export const analyticsService = {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
       await setUserId(analytics, userId);
+      console.log('[AnalyticsService] Set user ID:', userId);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to set user ID:', error);
     }
@@ -78,6 +97,7 @@ export const analyticsService = {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
       await setUserProperty(analytics, name, value);
+      console.log(`[AnalyticsService] Set user property "${name}":`, value);
     } catch (error) {
       console.warn(`[AnalyticsService] Failed to set user property "${name}":`, error);
     }
@@ -112,6 +132,7 @@ export const analyticsService = {
           },
         ],
       });
+      console.log(`[AnalyticsService] Logged view_item: "${product.title}" ($${product.price})`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log view_item:', error);
     }
@@ -143,8 +164,40 @@ export const analyticsService = {
           },
         ],
       });
+      console.log(`[AnalyticsService] Logged add_to_cart: "${item.title}" x${item.quantity}`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log add_to_cart:', error);
+    }
+  },
+
+  /**
+   * Log when a user adds an item to wishlist
+   */
+  async logAddToWishlist(item: {
+    id: number | string;
+    title: string;
+    price: number;
+    category?: string;
+  }): Promise<void> {
+    try {
+      const analytics = getAnalyticsInstance();
+      if (!analytics) return;
+      await logAddToWishlist(analytics, {
+        currency: 'USD',
+        value: Number(item.price),
+        items: [
+          {
+            item_id: String(item.id),
+            item_name: item.title,
+            item_category: item.category || 'General',
+            price: Number(item.price),
+            quantity: 1,
+          },
+        ],
+      });
+      console.log(`[AnalyticsService] Logged add_to_wishlist: "${item.title}"`);
+    } catch (error) {
+      console.warn('[AnalyticsService] Failed to log add_to_wishlist:', error);
     }
   },
 
@@ -172,6 +225,7 @@ export const analyticsService = {
           },
         ],
       });
+      console.log(`[AnalyticsService] Logged remove_from_cart: "${item.title}"`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log remove_from_cart:', error);
     }
@@ -180,7 +234,7 @@ export const analyticsService = {
   /**
    * Log when a user initiates the checkout process
    */
-  async logBeginCheckout(value: number, _itemsCount?: number): Promise<void> {
+  async logBeginCheckout(value: number, itemsCount?: number): Promise<void> {
     try {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
@@ -188,6 +242,7 @@ export const analyticsService = {
         currency: 'USD',
         value: Number(value.toFixed(2)),
       });
+      console.log(`[AnalyticsService] Logged begin_checkout: Total $${value.toFixed(2)} (${itemsCount || 0} items)`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log begin_checkout:', error);
     }
@@ -215,6 +270,7 @@ export const analyticsService = {
           quantity: Number(item.quantity || 1),
         })),
       });
+      console.log(`[AnalyticsService] Logged purchase: Order #${order.id} ($${order.total.toFixed(2)})`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log purchase:', error);
     }
@@ -228,6 +284,7 @@ export const analyticsService = {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
       await logLogin(analytics, { method });
+      console.log(`[AnalyticsService] Logged login via ${method}`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log login:', error);
     }
@@ -241,6 +298,7 @@ export const analyticsService = {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
       await logSignUp(analytics, { method });
+      console.log(`[AnalyticsService] Logged sign_up via ${method}`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log sign_up:', error);
     }
@@ -254,6 +312,7 @@ export const analyticsService = {
       const analytics = getAnalyticsInstance();
       if (!analytics) return;
       await logSearch(analytics, { search_term: query.trim() });
+      console.log(`[AnalyticsService] Logged search: "${query.trim()}"`);
     } catch (error) {
       console.warn('[AnalyticsService] Failed to log search:', error);
     }

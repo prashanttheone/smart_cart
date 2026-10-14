@@ -14,6 +14,7 @@ import { Product } from '../services/query/productQueries';
 import { useAppDispatch, useAppSelector } from '../store';
 import { addToCart } from '../store/slices/cartSlice';
 import { toggleWishlist } from '../store/slices/wishlistSlice';
+import { analyticsService } from '../services/firebase';
 
 export interface ProductCardProps {
   product: Product;
@@ -69,6 +70,13 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         })
       );
     }
+    analyticsService.logAddToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      quantity: 1,
+      category: product.category,
+    });
   }, [onAddToCart, product, dispatch]);
 
   const handleToggleWishlist = useCallback(() => {
@@ -84,7 +92,15 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         discountPercentage: product.discountPercentage,
       })
     );
-  }, [dispatch, product]);
+    if (!isInWishlist) {
+      analyticsService.logAddToWishlist({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        category: product.category,
+      });
+    }
+  }, [dispatch, product, isInWishlist]);
 
   const handlePress = useCallback(() => {
     onPress?.(product);

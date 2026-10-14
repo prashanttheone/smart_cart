@@ -15,6 +15,9 @@ import RootStackNavigator from './src/navigation/RootStackNavigator';
 
 function NotificationListener({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // 0. Initialize Firebase Analytics & verify collection
+    analyticsService.init();
+
     // 1. Setup notification channels, permission check & token acquisition
     notificationService.setupNotificationChannels();
     notificationService.checkPermission().then((isGranted) => {
