@@ -26,107 +26,68 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-/**
- * Strongly-typed icon map connecting route keys to Lucide icons
- */
-export const TAB_ICON_MAP: Record<keyof BottomTabParamList, LucideIcon> = {
-  Home: House,
-  Categories: LayoutGrid,
-  Wishlist: Heart,
-  Orders: ClipboardList,
-  Profile: User,
-};
-
 interface IconRendererProps {
   color: string;
   focused: boolean;
 }
 
 /**
- * Factory function defined at module-level to ensure stable component references
- * avoiding unstable nested component re-creation on render.
+ * Single source of truth for every bottom tab.
+ * Adding/removing/reordering one entry here updates:
+ *   1) the <Tab.Screen> list
+ *   2) the tabBar label
+ *   3) the tabBar icon
+ *   4) the badge wiring (when `dynamicBadge: true`)
  */
-const createTabIcon = (routeName: keyof BottomTabParamList) => {
-  const IconComponent = TAB_ICON_MAP[routeName];
+export interface TabConfig {
+  name: keyof BottomTabParamList;
+  component: React.ComponentType<any>;
+  label: string;
+  Icon: LucideIcon;
+  /** Fill the icon with color when focused (e.g. Wishlist heart) */
+  focusedFill?: boolean;
+  /** Pull a live tabBarBadge from Redux (see useAppSelector below) */
+  dynamicBadge?: boolean;
+}
+
+export const TAB_CONFIG: ReadonlyArray<TabConfig> = [
+  { name: 'Home',       component: HomeScreen,       label: 'Home',       Icon: House },
+  { name: 'Categories', component: CategoriesScreen, label: 'Categories', Icon: LayoutGrid },
+  { name: 'Wishlist',   component: WishlistScreen,   label: 'Wishlist',   Icon: Heart,        focusedFill: true, dynamicBadge: true },
+  { name: 'Orders',     component: OrdersScreen,     label: 'Orders',     Icon: ClipboardList },
+  { name: 'Profile',    component: ProfileScreen,    label: 'Profile',    Icon: User },
+] as const;
+
+/**
+ * Module-level factory → stable icon references across renders.
+ * (Inline arrow in tabBarIcon would create a new function every render
+ *  and cause the whole tab bar to re-render.)
+ */
+const createTabIcon = (IconComponent: LucideIcon, focusedFill: boolean) => {
   return function TabBarIcon({ color, focused }: IconRendererProps) {
     return (
       <IconComponent
         size={22}
         color={color}
         strokeWidth={focused ? 2.4 : 1.8}
-        fill={routeName === 'Wishlist' && focused ? color : 'none'}
+        fill={focusedFill && focused ? color : 'none'}
       />
     );
   };
 };
 
-/**
- * Route configuration contract for Bottom Tab Navigator
- */
-export interface TabRouteConfig<T extends keyof BottomTabParamList = keyof BottomTabParamList> {
-  name: T;
-  component: React.ComponentType<any>;
-  label: string;
-  icon: (props: IconRendererProps) => React.ReactNode;
-  options?: BottomTabNavigationOptions;
-}
+// ---- Derived once at module load — no duplication with TAB_CONFIG ----
+const TAB_ICONS: Record<string, (props: IconRendererProps) => React.ReactNode> = {};
+const STATIC_TAB_OPTIONS: Record<string, BottomTabNavigationOptions> = {};
 
-/**
- * Declarative array list of bottom tab screens
- */
-export const TAB_ROUTES: ReadonlyArray<TabRouteConfig> = [
-  {
-    name: 'Home',
-    component: HomeScreen,
-    label: 'Home',
-    icon: createTabIcon('Home'),
-  },
-  {
-    name: 'Categories',
-    component: CategoriesScreen,
-    label: 'Categories',
-    icon: createTabIcon('Categories'),
-  },
-  {
-    name: 'Wishlist',
-    component: WishlistScreen,
-    label: 'Wishlist',
-    icon: createTabIcon('Wishlist'),
-  },
-  {
-    name: 'Orders',
-    component: OrdersScreen,
-    label: 'Orders',
-    icon: createTabIcon('Orders'),
-  },
-  {
-    name: 'Profile',
-    component: ProfileScreen,
-    label: 'Profile',
-    icon: createTabIcon('Profile'),
-  },
-] as const;
-
-const STATIC_TAB_OPTIONS: Record<string, BottomTabNavigationOptions> = {
-  Home: {
-    tabBarLabel: 'Home',
-    tabBarIcon: createTabIcon('Home'),
-  },
-  Categories: {
-    tabBarLabel: 'Categories',
-    tabBarIcon: createTabIcon('Categories'),
-  },
-  Orders: {
-    tabBarLabel: 'Orders',
-    tabBarIcon: createTabIcon('Orders'),
-  },
-  Profile: {
-    tabBarLabel: 'Profile',
-    tabBarIcon: createTabIcon('Profile'),
-  },
-};
-
-const wishlistTabIcon = createTabIcon('Wishlist');
+TAB_CONFIG.forEach((tab) => {
+  const icon = createTabIcon(tab.Icon, !!tab.focusedFill);
+  TAB_ICONS[tab.name] = icon;
+  STATIC_TAB_OPTIONS[tab.name] = {
+    tabBarLabel: tab.label,
+    tabBarIcon: icon,
+  };
+});
 
 export function TabNavigator() {
   const insets = useSafeAreaInsets();
@@ -161,20 +122,23 @@ export function TabNavigator() {
   const wishlistOptions = useMemo<BottomTabNavigationOptions>(
     () => ({
       tabBarLabel: 'Wishlist',
-      tabBarIcon: wishlistTabIcon,
+      tabBarIcon: TAB_ICONS['Wishlist'],
       tabBarBadge: wishlistBadge,
     }),
     [wishlistBadge]
   );
 
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
-      {TAB_ROUTES.map((route) => (
+    <Tab.Navigator
+      initialRouteName="Home"
+      screenOptions={screenOptions}
+    >
+      {TAB_CONFIG.map((tab) => (
         <Tab.Screen
-          key={route.name}
-          name={route.name}
-          component={route.component}
-          options={route.name === 'Wishlist' ? wishlistOptions : STATIC_TAB_OPTIONS[route.name]}
+          key={tab.name}
+          name={tab.name}
+          component={tab.component}
+          options={tab.dynamicBadge ? wishlistOptions : STATIC_TAB_OPTIONS[tab.name]}
         />
       ))}
     </Tab.Navigator>
