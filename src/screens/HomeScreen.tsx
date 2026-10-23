@@ -1,19 +1,15 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import {
-  StyleSheet,
-  View,
-  StatusBar,
-} from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { colors } from '../theme/colors';
 import { DrawerParamList, RootStackParamList } from '../navigation/types';
-import { HomeHeader } from '../components/HomeHeader';
-import { HomeSearchBar } from '../components/HomeSearchBar';
 import { CategoryList } from '../components/CategoryList';
 import { DealsOfTheDay } from '../components/DealsOfTheDay';
+import { HomeHeader } from '../components/HomeHeader';
+import { HomeSearchSection } from '../components/HomeSearchSection';
 import { ProductGrid } from '../components/ProductGrid';
 import { Text, useToastModal } from '../components/ui';
 import { Product } from '../services/query/productQueries';
@@ -21,52 +17,24 @@ import { Product } from '../services/query/productQueries';
 type HomeScreenNavProp = DrawerNavigationProp<DrawerParamList> &
   NativeStackNavigationProp<RootStackParamList>;
 
-const HomeSearchSection: React.FC<{
-  onPressBar: () => void;
-  onPressScan: () => void;
-  onPressFilter: () => void;
-}> = React.memo(({ onPressBar, onPressScan, onPressFilter }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
-    setDebouncedQuery('');
-  }, []);
-
-  return (
-    <View style={styles.searchContainer}>
-      <HomeSearchBar
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        onPressBar={onPressBar}
-        onDebouncedSearch={setDebouncedQuery}
-        onClear={handleClearSearch}
-        rightActionType="scan"
-        onPressScan={onPressScan}
-        onPressFilter={onPressFilter}
-      />
-
-      {debouncedQuery.length > 0 && (
-        <View style={styles.searchActivePill}>
-          <Text variant="caption" color="primaryLight">
-            Searching for: <Text weight="semiBold" size="xs">{debouncedQuery}</Text>
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-});
-
+/**
+ * Home feed layout:
+ *   [fixed]  HomeHeader
+ *   [scroll] ProductGrid — with Search / Banner / Categories / Deals injected
+ *            via ListHeaderComponent so the feed stays virtualized.
+ */
 const HomeScreenComponent: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavProp>();
   const { showAlert, showToast } = useToastModal();
+
+  // ── Local UI state ──────────────────────────────────────────────
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [deliveryLocation, setDeliveryLocation] = useState({
     type: 'Home',
     address: 'Bangalore, 560001',
   });
 
+  // ── Header actions (notifications / address / cart) ─────────────
   const handleNotificationsPress = useCallback(() => {
     showAlert({
       type: 'info',
@@ -74,6 +42,19 @@ const HomeScreenComponent: React.FC = () => {
       message: 'You have no unread notifications right now.',
     });
   }, [showAlert]);
+
+  const handleSelectAddress = useCallback((item: { type: string; address: string }) => {
+    setDeliveryLocation({ type: item.type, address: item.address });
+  }, []);
+
+  const handlePressCart = useCallback(() => {
+    navigation.navigate('Cart');
+  }, [navigation]);
+
+  // ── Search-row actions ────────────────────────────────────
+  const handleSearchBarPress = useCallback(() => {
+    navigation.navigate('Search', { initialQuery: '' });
+  }, [navigation]);
 
   const handleScanPress = useCallback(() => {
     showAlert({
@@ -91,6 +72,7 @@ const HomeScreenComponent: React.FC = () => {
     });
   }, [showToast]);
 
+  // ── Product & category actions ──────────────────────────────
   const handleProductPress = useCallback(
     (product: Product) => {
       navigation.navigate('ProductDetails', { product });
@@ -106,66 +88,40 @@ const HomeScreenComponent: React.FC = () => {
     [navigation]
   );
 
-  const handleSearchBarPress = useCallback(() => {
-    navigation.navigate('Search', { initialQuery: '' });
-  }, [navigation]);
+  // ── Scrollable header for ProductGrid ─
+  const listHeaderComponent = (
+    <>
+      <HomeSearchSection
+        onPressBar={handleSearchBarPress}
+        onPressScan={handleScanPress}
+        onPressFilter={handleFilterPress}
+      />
 
-  const handleSelectAddress = useCallback((item: { type: string; address: string }) => {
-    setDeliveryLocation({ type: item.type, address: item.address });
-  }, []);
+      <View style={styles.bannerCard}>
+        <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
+          SPECIAL OFFER
+        </Text>
+        <Text variant="h2" style={styles.bannerTitle}>
+          Big Deals Everyday
+        </Text>
+        <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
+          Up to 50% OFF
+        </Text>
+      </View>
 
-  const handlePressCart = useCallback(() => {
-    navigation.navigate('Cart');
-  }, [navigation]);
+      <CategoryList
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
+      />
 
-  // Header content rendered at the top of the paginated product grid - memoized
-  const listHeaderComponent = useMemo(
-    () => (
-      <>
-        {/* HomeSearchBar with debounce, clear action, scanner & filter actions */}
-        <HomeSearchSection
-          onPressBar={handleSearchBarPress}
-          onPressScan={handleScanPress}
-          onPressFilter={handleFilterPress}
-        />
-
-        {/* Special Offer Banner */}
-        <View style={styles.bannerCard}>
-          <Text variant="caption" weight="semiBold" style={styles.bannerTag}>
-            SPECIAL OFFER
-          </Text>
-          <Text variant="h2" style={styles.bannerTitle}>
-            Big Deals Everyday
-          </Text>
-          <Text variant="title" weight="bold" style={styles.bannerSubtitle}>
-            Up to 50% OFF
-          </Text>
-        </View>
-
-        {/* Dynamic Category Slugs List */}
-        <CategoryList
-          selectedCategory={selectedCategory}
-          onSelectCategory={handleSelectCategory}
-        />
-
-        {/* Deals of the Day Section */}
-        <DealsOfTheDay onPressProduct={handleProductPress} />
-      </>
-    ),
-    [
-      selectedCategory,
-      handleSearchBarPress,
-      handleScanPress,
-      handleFilterPress,
-      handleSelectCategory,
-      handleProductPress,
-    ]
+      <DealsOfTheDay onPressProduct={handleProductPress} />
+    </>
   );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      {/* HomeHeader with SmartCart logo, delivery address, notifications, and cart badge */}
+
       <HomeHeader
         locationType={deliveryLocation.type}
         addressText={deliveryLocation.address}
@@ -175,7 +131,6 @@ const HomeScreenComponent: React.FC = () => {
         onPressCart={handlePressCart}
       />
 
-      {/* 2-Column Paginated Grid with Auto Scroll-based Next Limit/Skip Fetching */}
       <ProductGrid
         category={selectedCategory}
         limit={10}
@@ -192,20 +147,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: colors.surface,
-  },
-  searchActivePill: {
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
   },
   bannerCard: {
     margin: 16,
