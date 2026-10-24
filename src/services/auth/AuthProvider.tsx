@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useCallback } from 'react';
 import { Platform } from 'react-native';
 import { keychainStorage } from '../storage/keychainStorage';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -33,16 +33,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const dispatch = useAppDispatch();
+  // Redux store is the SINGLE source of truth for auth state — no local useState mirror.
   const reduxAuth = useAppSelector((state) => state.auth);
-
-  const [token, setLocalToken] = useState<string | null>(null);
-  const [user, setLocalUser] = useState<User | null>(null);
-  const [isInitializing, setIsInitializingState] = useState<boolean>(true);
 
   // Restore session from Keychain on app launch
   const restoreSession = useCallback(async () => {
     try {
-      setIsInitializingState(true);
       dispatch(setInitializing(true));
 
       const storedToken = await keychainStorage.getToken();
@@ -58,8 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           is_recruiter: Boolean((storedUser as any).is_recruiter),
           token: storedToken,
         };
-        setLocalToken(storedToken);
-        setLocalUser(normalizedUser);
         dispatch(setAuthSession({ user: normalizedUser, token: storedToken }));
         analyticsService.setUserId(normalizedUser.id);
       } else if (storedToken) {
@@ -73,19 +67,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           is_recruiter: false,
           token: storedToken,
         };
-        setLocalToken(storedToken);
-        setLocalUser(fallbackUser);
         dispatch(setAuthSession({ user: fallbackUser, token: storedToken }));
       } else {
-        setLocalToken(null);
-        setLocalUser(null);
         dispatch(logoutRedux());
       }
     } catch (error) {
       console.warn('[AuthProvider] Error restoring auth session from Keychain:', error);
       dispatch(logoutRedux());
     } finally {
-      setIsInitializingState(false);
       dispatch(setInitializing(false));
     }
   }, [dispatch]);
@@ -142,9 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await keychainStorage.setToken(res.token);
           await keychainStorage.setUserData(userData);
 
-          // 2. Update Redux & local context
-          setLocalToken(res.token);
-          setLocalUser(userData);
+          // 2. Update Redux store (single source of truth)
           dispatch(setAuthSession({ user: userData, token: res.token }));
 
           // 3. Firebase Analytics & Push Notification identification
@@ -228,9 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await keychainStorage.setToken(res.token);
           await keychainStorage.setUserData(userData);
 
-          // 2. Update Redux & local context
-          setLocalToken(res.token);
-          setLocalUser(userData);
+          // 2. Update Redux store (single source of truth)
           dispatch(setAuthSession({ user: userData, token: res.token }));
 
           // 3. Firebase Analytics & Push Notification identification
@@ -260,7 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Synchronize FCM token on token refresh if user is currently authenticated
   useEffect(() => {
     const unsubscribe = notificationService.onTokenRefresh(async (refreshedToken) => {
-      if (token && user) {
+      if (reduxAuth.token && reduxAuth.user) {
         await notificationService.syncTokenWithServer(refreshedToken).catch((err) => {
           console.warn('[AuthProvider] Token refresh sync error:', err);
         });
@@ -269,48 +254,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubscribe();
     };
-  }, [token, user]);
+  }, [reduxAuth.token, reduxAuth.user]);
 
   // Logout handler
   const logout = useCallback(async () => {
     await keychainStorage.clearAuth();
-    setLocalToken(null);
-    setLocalUser(null);
     dispatch(logoutRedux());
 
     // Clear Firebase Analytics
     analyticsService.setUserId(null);
   }, [dispatch]);
 
-  const isAuthenticated = Boolean(
-    (reduxAuth.isAuthenticated && reduxAuth.token) ||
-    (token && user)
-  );
-
   const contextValue = useMemo<AuthContextType>(
     () => ({
-      user: reduxAuth.user || user,
-      token: reduxAuth.token || token,
-      isAuthenticated,
-      isInitializing: reduxAuth.isInitializing || isInitializing,
+      user: reduxAuth.user,
+      token: reduxAuth.token,
+      isAuthenticated: reduxAuth.isAuthenticated,
+      isInitializing: reduxAuth.isInitializing,
       login,
       register,
       logout,
       restoreSession,
     }),
-    [
-      reduxAuth.user,
-      reduxAuth.token,
-      reduxAuth.isInitializing,
-      user,
-      token,
-      isAuthenticated,
-      isInitializing,
-      login,
-      register,
-      logout,
-      restoreSession,
-    ]
+    [reduxAuth, login, register, logout, restoreSession]
   );
 
   return (
